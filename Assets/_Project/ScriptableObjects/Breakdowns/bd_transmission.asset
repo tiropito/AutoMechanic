@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26a527c8a8a454344949b89d72a2ffa6, type: 3}
+  m_Name: bd_transmission
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.Data.BreakdownData
+  id: bd_transmission
+  displayName: "\u041A\u041F\u041F"
+  requiredParts:
+  - {fileID: 11400000, guid: 23e96efcf1136464092f6bdf3fce3583, type: 2}
+  repairReward: 40
+  visual: 2
+  icon: {fileID: 0}

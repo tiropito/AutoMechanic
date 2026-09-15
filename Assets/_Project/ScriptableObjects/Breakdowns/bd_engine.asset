@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26a527c8a8a454344949b89d72a2ffa6, type: 3}
+  m_Name: bd_engine
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.Data.BreakdownData
+  id: bd_engine
+  displayName: "\u0414\u0432\u0438\u0433\u0430\u0442\u0435\u043B\u044C"
+  requiredParts:
+  - {fileID: 11400000, guid: bb80b5f6c5cde544aba4ced666e63627, type: 2}
+  repairReward: 30
+  visual: 0
+  icon: {fileID: 0}

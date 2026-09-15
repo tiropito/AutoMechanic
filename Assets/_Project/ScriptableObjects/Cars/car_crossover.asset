@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8501b4aa97688024b8f18ebf1e6b6ad3, type: 3}
+  m_Name: car_crossover
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.Data.CarData
+  id: car_crossover
+  displayName: Crossover Q6
+  prototype: Audi Q6
+  type: 2
+  isBonus: 0
+  sprite: {fileID: 0}
+  possibleBreakdowns:
+  - {fileID: 11400000, guid: 5f0810a0aa5a3bb489ade8e705ddd668, type: 2}
+  - {fileID: 11400000, guid: 31e01e34edfbc0849a8090ed9d219d4f, type: 2}
+  - {fileID: 11400000, guid: 702c96a8bbdd7da42a022155f8c9610e, type: 2}
+  - {fileID: 11400000, guid: d6c65b10e7f32ca4ea928be7be5ce9cb, type: 2}
+  - {fileID: 11400000, guid: 1ff330e3b5381e94dabad517bbab73fb, type: 2}
+  - {fileID: 11400000, guid: 0fe6e7b88c257444a9149dc7dd5c6a8b, type: 2}
