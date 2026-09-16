@@ -14,11 +14,12 @@ namespace AutoMechanic.Gameplay
         public bool isInRepair;         // сейчас в гараже
         public float timeSinceEmpty;    // секунд пустует
         public float refillDelay;       // через сколько секунд приедет новая
+        public float bonusTimeLeft;     // сколько осталось у бонусной машины (сек)
     }
 
     /// <summary>
     /// Управляет слотами заказов. 3 старт, максимум 6.
-    /// Автоматически подселяет машины с задержкой 1–2 сек.
+    /// Бонусные машины живут ограниченное время (по ТЗ — 3 минуты).
     /// </summary>
     public class SlotManager : MonoBehaviour
     {
@@ -34,11 +35,15 @@ namespace AutoMechanic.Gameplay
         [SerializeField] private float refillDelayMin = 1f;
         [SerializeField] private float refillDelayMax = 2f;
 
+        [Tooltip("Сколько живёт бонусная машина в слоте (сек). По ТЗ — 180")]
+        [SerializeField] private float bonusTimeSeconds = 180f;
+
         [Header("Слоты (не трогай руками)")]
         [SerializeField] private List<SlotData> slots = new List<SlotData>();
 
         public IReadOnlyList<SlotData> Slots => slots;
         public int MaxSlots => maxSlots;
+        public float BonusTimeSeconds => bonusTimeSeconds;
 
         public event Action OnSlotsChanged;
 
@@ -71,10 +76,25 @@ namespace AutoMechanic.Gameplay
             for (int i = 0; i < slots.Count; i++)
             {
                 var s = slots[i];
-                if (s.currentCar != null || s.isInRepair) continue;
 
-                s.timeSinceEmpty += Time.deltaTime;
-                if (s.timeSinceEmpty >= s.refillDelay) FillSlot(i);
+                // Пустой слот — считаем до приезда новой машины
+                if (s.currentCar == null && !s.isInRepair)
+                {
+                    s.timeSinceEmpty += Time.deltaTime;
+                    if (s.timeSinceEmpty >= s.refillDelay) FillSlot(i);
+                    continue;
+                }
+
+                // Бонусная машина — считаем до отъезда
+                if (s.currentCar != null && s.isBonus && !s.isInRepair)
+                {
+                    s.bonusTimeLeft -= Time.deltaTime;
+                    if (s.bonusTimeLeft <= 0f)
+                    {
+                        Debug.Log($"[SlotManager] Бонусная {s.currentCar.displayName} уехала — время вышло");
+                        MakeEmpty(i);
+                    }
+                }
             }
         }
 
@@ -85,6 +105,8 @@ namespace AutoMechanic.Gameplay
             slots[index].isBonus = car != null && car.isBonus;
             slots[index].timeSinceEmpty = 0f;
             slots[index].refillDelay = UnityEngine.Random.Range(refillDelayMin, refillDelayMax);
+            slots[index].bonusTimeLeft = slots[index].isBonus ? bonusTimeSeconds : 0f;
+
             OnSlotsChanged?.Invoke();
         }
 
@@ -103,6 +125,7 @@ namespace AutoMechanic.Gameplay
             s.isBonus = false;
             s.isInRepair = false;
             s.timeSinceEmpty = 0f;
+            s.bonusTimeLeft = 0f;
             s.refillDelay = UnityEngine.Random.Range(refillDelayMin, refillDelayMax);
             OnSlotsChanged?.Invoke();
         }
@@ -146,7 +169,7 @@ namespace AutoMechanic.Gameplay
             {
                 var s = slots[i];
                 var name = s.currentCar != null ? s.currentCar.displayName : "(пусто)";
-                var bonus = s.isBonus ? " ⭐" : "";
+                var bonus = s.isBonus ? $" ★ {s.bonusTimeLeft:F1}с" : "";
                 sb.AppendLine($"  [{i}] {name}{bonus} timer={s.timeSinceEmpty:F1}/{s.refillDelay:F1}");
             }
             Debug.Log(sb.ToString());
@@ -160,6 +183,16 @@ namespace AutoMechanic.Gameplay
         {
             if (TryAddSlot()) Debug.Log($"[SlotManager] Слотов теперь: {slots.Count}");
             else Debug.Log("[SlotManager] Максимум достигнут");
+        }
+
+        [ContextMenu("ТЕСТ: сделать слот 0 бонусным (30 сек)")]
+        private void TestForceBonus()
+        {
+            if (slots.Count == 0 || slots[0].currentCar == null) return;
+            slots[0].isBonus = true;
+            slots[0].bonusTimeLeft = 30f;
+            OnSlotsChanged?.Invoke();
+            Debug.Log("[SlotManager] Слот 0 стал бонусным на 30 сек");
         }
     }
 }
