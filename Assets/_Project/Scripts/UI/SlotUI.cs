@@ -3,6 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using AutoMechanic.Data;
+using AutoMechanic.Gameplay;   // ← вот этой строки не хватало (SlotData)
 
 namespace AutoMechanic.UI
 {
@@ -48,8 +49,9 @@ namespace AutoMechanic.UI
 
             if (carImage != null)
             {
-                carImage.sprite = hasCar ? slot.currentCar.sprite : null;
-                carImage.enabled = hasCar;
+                bool hasSprite = hasCar && slot.currentCar.sprite != null;
+                carImage.sprite = hasSprite ? slot.currentCar.sprite : null;
+                carImage.enabled = hasSprite;   // ← пусто → картинка скрыта, не белый прямоугольник
             }
 
             if (nameText != null)
