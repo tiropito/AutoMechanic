@@ -6,7 +6,7 @@ using AutoMechanic.Data;
 namespace AutoMechanic.Gameplay
 {
     /// <summary>
-    /// Гараж: хранит машину, которую игрок сейчас ремонтирует.
+    /// Гараж: хранит машины, которые игрок сейчас ремонтирует.
     /// Машина приходит из SlotManager.TakeCar().
     /// </summary>
     public class GarageManager : MonoBehaviour
@@ -65,7 +65,8 @@ namespace AutoMechanic.Gameplay
                 car = car,
                 slotIndex = slotIndex,
                 state = RepairState.NotDiagnosed,
-                brokenDownList = new List<BreakdownData>()
+                brokenDownList = new List<BreakdownData>(),
+                fixedList = new List<BreakdownData>()
             };
 
             sessions.Add(session);
@@ -132,6 +133,11 @@ namespace AutoMechanic.Gameplay
         public CarData car;
         public int slotIndex;
         public RepairState state;
-        public List<BreakdownData> brokenDownList;   // известные поломки (после диагностики)
+
+        /// <summary>Все известные поломки (после диагностики).</summary>
+        public List<BreakdownData> brokenDownList = new List<BreakdownData>();
+
+        /// <summary>Те поломки, которые уже устранены (✅).</summary>
+        public List<BreakdownData> fixedList = new List<BreakdownData>();
     }
 }

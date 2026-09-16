@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using AutoMechanic.Data;
+using AutoMechanic.Gameplay;   // для DiagnosticManager / GarageManager в тестовом методе
 
 namespace AutoMechanic.Core
 {
@@ -23,6 +24,9 @@ namespace AutoMechanic.Core
 
         /// <summary>Вызывается при изменении любой ячейки. Аргумент — ID детали.</summary>
         public event Action<string> OnInventoryChanged;
+
+        /// <summary>Реестр деталей (для тестовых методов и UI)</summary>
+        public PartDatabase PartDatabase => partDatabase;
 
         private void Awake()
         {
@@ -122,7 +126,8 @@ namespace AutoMechanic.Core
             Debug.Log($"[InventoryManager] Загружено видов деталей: {_items.Count}");
         }
 
-        // ===== ТЕСТЫ =====
+        // ==================== ТЕСТЫ (ПКМ по компоненту) ====================
+
         [ContextMenu("ТЕСТ: +5 поршней")]
         private void TestAddPistons() => Add("part_piston", 5);
 
@@ -141,8 +146,72 @@ namespace AutoMechanic.Core
         private void TestDump()
         {
             var sb = new System.Text.StringBuilder("[InventoryManager]\n");
+            if (_items.Count == 0) sb.AppendLine("  (пусто)");
             foreach (var kv in _items)
                 sb.AppendLine($"  {kv.Key} = {kv.Value}");
+            Debug.Log(sb.ToString());
+        }
+
+        /// <summary>
+        /// Разом добавить +10 каждой детали из PartDatabase.
+        /// Самый быстрый способ наполнить инвентарь для тестов.
+        /// </summary>
+        [ContextMenu("ТЕСТ: +10 всех деталей")]
+        private void TestAddAllParts()
+        {
+            if (partDatabase == null || partDatabase.allParts == null)
+            {
+                Debug.LogError("[InventoryManager] PartDatabase пустой!");
+                return;
+            }
+
+            int added = 0;
+            foreach (var part in partDatabase.allParts)
+            {
+                if (part == null) continue;
+                Add(part.id, 10);
+                added++;
+            }
+            Debug.Log($"[InventoryManager] Добавлено +10 к {added} видам деталей");
+        }
+
+        /// <summary>
+        /// Добавить ровно те детали, которые нужны для поломок в сессии 0 гаража.
+        /// Удобно для теста связки «диагностика → ремонт».
+        /// </summary>
+        [ContextMenu("ТЕСТ: дать детали под сессию 0")]
+        private void TestGrantPartsForSession0()
+        {
+            if (DiagnosticManager.Instance == null)
+            {
+                Debug.LogError("[InventoryManager] DiagnosticManager не найден на сцене");
+                return;
+            }
+
+            var breakdowns = DiagnosticManager.Instance.GetBreakdowns(0);
+            if (breakdowns == null || breakdowns.Count == 0)
+            {
+                Debug.LogWarning("[InventoryManager] Сессия 0 пуста. Сначала диагностика!");
+                return;
+            }
+
+            int added = 0;
+            var sb = new System.Text.StringBuilder("[InventoryManager] Выданы детали под сессию 0:\n");
+
+            foreach (var bd in breakdowns)
+            {
+                if (bd == null || bd.requiredParts == null) continue;
+
+                foreach (var part in bd.requiredParts)
+                {
+                    if (part == null) continue;
+                    Add(part.id, 1);
+                    sb.AppendLine($"  + 1 {part.displayName} (для «{bd.displayName}»)");
+                    added++;
+                }
+            }
+
+            sb.AppendLine($"Итого выдано: {added}");
             Debug.Log(sb.ToString());
         }
     }
