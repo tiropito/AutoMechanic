@@ -6,19 +6,18 @@ using AutoMechanic.Data;
 
 namespace AutoMechanic.EditorTools
 {
-    /// <summary>
-    /// Генератор всех игровых данных из ТЗ.
-    /// Запуск: меню AutoMechanic → Сгенерировать все данные.
-    /// </summary>
     public static class DataGenerator
     {
-        private const string PartsPath = "Assets/_Project/ScriptableObjects/Parts";
-        private const string BreakdownsPath = "Assets/_Project/ScriptableObjects/Breakdowns";
-        private const string CarsPath = "Assets/_Project/ScriptableObjects/Cars";
+        private const string RootPath = "Assets/_Project/ScriptableObjects";
+        private const string PartsPath = RootPath + "/Parts";
+        private const string BreakdownsPath = RootPath + "/Breakdowns";
+        private const string CarsPath = RootPath + "/Cars";
+        private const string DatabasePath = RootPath + "/PartDatabase.asset";
 
         [MenuItem("AutoMechanic/Сгенерировать все данные")]
         public static void GenerateAll()
         {
+            EnsureFolder(RootPath);
             EnsureFolder(PartsPath);
             EnsureFolder(BreakdownsPath);
             EnsureFolder(CarsPath);
@@ -35,39 +34,34 @@ namespace AutoMechanic.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
+            GenerateDatabase();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
             Debug.Log("[AutoMechanic] Все данные сгенерированы!");
         }
 
-        // ==================== ДЕТАЛИ (18) ====================
-
         private static void GenerateParts()
         {
-            // Двигатель
             CreatePart("part_piston",       "Поршень",              PartCategory.Engine,       25);
             CreatePart("part_spark_plug",   "Свеча",                PartCategory.Engine,       10);
             CreatePart("part_timing_belt",  "Ремень ГРМ",           PartCategory.Engine,       20);
             CreatePart("part_oil_filter",   "Масляный фильтр",      PartCategory.Engine,       10);
-            // Колёса
             CreatePart("part_tire",         "Шина",                 PartCategory.Wheels,       30);
             CreatePart("part_rim",          "Диск",                 PartCategory.Wheels,       25);
             CreatePart("part_brake_disc",   "Тормозной диск",       PartCategory.Wheels,       20);
             CreatePart("part_brake_pad",    "Тормозная колодка",    PartCategory.Wheels,       15);
-            // КПП
             CreatePart("part_clutch",       "Сцепление",            PartCategory.Transmission, 30);
             CreatePart("part_gear",         "Шестерня",             PartCategory.Transmission, 25);
             CreatePart("part_synchronizer", "Синхронизатор",        PartCategory.Transmission, 20);
-            // Электрика
             CreatePart("part_battery",      "Аккумулятор",          PartCategory.Electric,     30);
             CreatePart("part_generator",    "Генератор",            PartCategory.Electric,     25);
             CreatePart("part_headlight",    "Фара",                 PartCategory.Electric,     15);
-            // Кузов
             CreatePart("part_rust_kit",     "Ремкомплект ржавчины", PartCategory.Body,         20);
             CreatePart("part_paint",        "Краска",               PartCategory.Body,         15);
             CreatePart("part_bumper",       "Бампер",               PartCategory.Body,         25);
             CreatePart("part_mirror",       "Зеркало",              PartCategory.Body,         10);
         }
-
-        // ==================== ПОЛОМКИ (6) ====================
 
         private static void GenerateBreakdowns()
         {
@@ -78,8 +72,6 @@ namespace AutoMechanic.EditorTools
             CreateBreakdown("bd_brakes",       "Тормоза",   BreakdownVisual.Squeak, 30, "part_brake_pad");
             CreateBreakdown("bd_electric",     "Электрика", BreakdownVisual.NoLight,35, "part_battery");
         }
-
-        // ==================== МАШИНЫ (10) ====================
 
         private static void GenerateCars()
         {
@@ -95,7 +87,25 @@ namespace AutoMechanic.EditorTools
             CreateCar("car_sport_911",  "Sport 911",      "Porsche 911 Classic",  CarType.Sport,     true);
         }
 
-        // ==================== ХЕЛПЕРЫ ====================
+        private static void GenerateDatabase()
+        {
+            var db = AssetDatabase.LoadAssetAtPath<PartDatabase>(DatabasePath);
+            if (db == null)
+            {
+                db = ScriptableObject.CreateInstance<PartDatabase>();
+                AssetDatabase.CreateAsset(db, DatabasePath);
+            }
+
+            var parts = new List<PartData>();
+            foreach (var guid in AssetDatabase.FindAssets("t:PartData", new[] { PartsPath }))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                var p = AssetDatabase.LoadAssetAtPath<PartData>(path);
+                if (p != null) parts.Add(p);
+            }
+            db.allParts = parts.ToArray();
+            EditorUtility.SetDirty(db);
+        }
 
         private static void CreatePart(string id, string name, PartCategory cat, int price)
         {
@@ -136,7 +146,6 @@ namespace AutoMechanic.EditorTools
             asset.type = type;
             asset.isBonus = bonus;
 
-            // Пока все поломки в пул — потом сузим по машинам
             var bds = new List<BreakdownData>();
             foreach (var guid in AssetDatabase.FindAssets("t:BreakdownData", new[] { BreakdownsPath }))
             {
