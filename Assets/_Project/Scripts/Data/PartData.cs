@@ -28,6 +28,10 @@ namespace AutoMechanic.Data
         [Tooltip("Отображаемое имя для UI. Например: Поршень")]
         public string displayName;
 
+        [Tooltip("Короткое описание: что это за деталь и зачем нужна")]
+        [TextArea(2, 4)]
+        public string description;
+
         [Tooltip("Категория детали")]
         public PartCategory category;
 

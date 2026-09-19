@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -13,6 +14,9 @@ namespace AutoMechanic.UI
     /// </summary>
     public class ShopPanelUI : MonoBehaviour
     {
+        /// <summary>Событие: открыта ли панель магазина (true = открыта).</summary>
+        public static event Action<bool> OnShopToggled;
+
         [SerializeField] private GameObject rootPanel;
         [SerializeField] private TMP_Text moneyText;
         [SerializeField] private Transform itemsContainer;
@@ -33,16 +37,18 @@ namespace AutoMechanic.UI
         {
             if (rootPanel != null) rootPanel.SetActive(true);
 
-            // Каждый раз пробуем получить базу — на случай, если InventoryManager создался позже
             TryFetchDatabase();
 
             if (!_built) { Rebuild(); _built = true; }
             RefreshAll();
+
+            OnShopToggled?.Invoke(true);
         }
 
         public void Close()
         {
             if (rootPanel != null) rootPanel.SetActive(false);
+            OnShopToggled?.Invoke(false);
         }
 
         public void Toggle()
@@ -70,7 +76,7 @@ namespace AutoMechanic.UI
             if (_database == null || _database.allParts == null)
             {
                 Debug.LogError("[ShopPanelUI] Нет базы — не могу построить магазин");
-                _built = false; // попробуем ещё раз при следующем Open
+                _built = false;
                 return;
             }
             if (itemPrefab == null)
@@ -91,7 +97,7 @@ namespace AutoMechanic.UI
             {
                 if (part == null) continue;
                 var row = Instantiate(itemPrefab, itemsContainer);
-                row.Bind(part, OnBuyClicked);
+                row.Bind(part, OnBuyClicked, OnSellClicked);
                 _items.Add(row);
                 count++;
             }
@@ -102,6 +108,19 @@ namespace AutoMechanic.UI
         {
             if (ShopManager.Instance == null) return;
             ShopManager.Instance.TryBuy(part, 1);
+            RefreshAll();
+        }
+
+        private void OnSellClicked(PartData part)
+        {
+            if (InventoryManager.Instance == null) return;
+
+            int earned = InventoryManager.Instance.SellOne(part);
+            if (earned > 0)
+                Debug.Log($"[ShopPanelUI] Продано: {part.displayName} за ${earned}");
+            else
+                Debug.Log($"[ShopPanelUI] Нет {part.displayName} для продажи");
+
             RefreshAll();
         }
 

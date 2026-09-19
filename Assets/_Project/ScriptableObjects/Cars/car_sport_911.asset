@@ -17,7 +17,7 @@ MonoBehaviour:
   prototype: Porsche 911 Classic
   type: 5
   isBonus: 1
-  sprite: {fileID: 0}
+  sprite: {fileID: -5484828873933490359, guid: 640f44c7c557a5d459d425c26bf2184c, type: 3}
   possibleBreakdowns:
   - {fileID: 11400000, guid: 5f0810a0aa5a3bb489ade8e705ddd668, type: 2}
   - {fileID: 11400000, guid: 31e01e34edfbc0849a8090ed9d219d4f, type: 2}

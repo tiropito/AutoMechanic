@@ -14,6 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.Data.PartData
   id: part_rim
   displayName: "\u0414\u0438\u0441\u043A"
+  description: "\u041C\u0435\u0442\u0430\u043B\u043B\u0438\u0447\u0435\u0441\u043A\u0430\u044F
+    \u043E\u0441\u043D\u043E\u0432\u0430 \u043A\u043E\u043B\u0435\u0441\u0430. \u041A\u0440\u0435\u043F\u0438\u0442\u0441\u044F
+    \u043A \u0441\u0442\u0443\u043F\u0438\u0446\u0435."
   category: 1
   buyPrice: 25
   sellPercent: 60

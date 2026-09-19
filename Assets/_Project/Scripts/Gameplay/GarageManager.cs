@@ -7,7 +7,7 @@ namespace AutoMechanic.Gameplay
 {
     /// <summary>
     /// Гараж: хранит машины, которые игрок сейчас ремонтирует.
-    /// Машина приходит из SlotManager.TakeCar().
+    /// Поддерживает переключение между несколькими машинами (после апгрейда).
     /// </summary>
     public class GarageManager : MonoBehaviour
     {
@@ -20,13 +20,27 @@ namespace AutoMechanic.Gameplay
         [Header("Текущие машины (не трогай руками)")]
         [SerializeField] private List<RepairSession> sessions = new List<RepairSession>();
 
+        [Tooltip("Индекс активной машины в гараже")]
+        [SerializeField] private int currentSessionIndex = 0;
+
         public IReadOnlyList<RepairSession> Sessions => sessions;
         public int MaxConcurrentRepairs => maxConcurrentRepairs;
+        public int CurrentSessionIndex => currentSessionIndex;
 
         /// <summary>Можно ли взять ещё одну машину в ремонт</summary>
         public bool HasFreeBay => sessions.Count < maxConcurrentRepairs;
 
+        /// <summary>Активная сессия (или null, если машин нет)</summary>
+        public RepairSession CurrentSession =>
+            (sessions.Count > 0 && currentSessionIndex >= 0 && currentSessionIndex < sessions.Count)
+            ? sessions[currentSessionIndex]
+            : null;
+
+        /// <summary>Изменение списка сессий (взяли / завершили / слотов стало больше)</summary>
         public event Action OnSessionsChanged;
+
+        /// <summary>Смена активной машины (клик по табу)</summary>
+        public event Action<int> OnCurrentSessionChanged;
 
         private void Awake()
         {
@@ -34,6 +48,8 @@ namespace AutoMechanic.Gameplay
             Instance = this;
             DontDestroyOnLoad(gameObject);
         }
+
+        // ==================== ВЗЯТЬ МАШИНУ ====================
 
         /// <summary>
         /// Взять машину из слота. Возвращает true, если успешно.
@@ -70,20 +86,74 @@ namespace AutoMechanic.Gameplay
             };
 
             sessions.Add(session);
+
+            // Новая машина автоматически становится активной
+            currentSessionIndex = sessions.Count - 1;
+
             OnSessionsChanged?.Invoke();
+            OnCurrentSessionChanged?.Invoke(currentSessionIndex);
+
             Debug.Log($"[GarageManager] Взял в ремонт: {car.displayName}");
             return true;
         }
+
+        // ==================== ЗАВЕРШИТЬ РЕМОНТ ====================
 
         /// <summary>Завершить ремонт и освободить пост.</summary>
         public void CompleteRepair(int sessionIndex)
         {
             if (sessionIndex < 0 || sessionIndex >= sessions.Count) return;
+
             var s = sessions[sessionIndex];
-            SlotManager.Instance?.ReleaseSlot(s.slotIndex);
+
+            // ВАЖНО: слот уже освобождён в TakeCarFromSlot.
+            // Повторно вызывать SlotManager.ReleaseSlot НЕЛЬЗЯ — 
+            // он обнулит уже приехавшую новую машину.
+
             sessions.RemoveAt(sessionIndex);
+
+            // Корректируем активный индекс
+            if (currentSessionIndex >= sessions.Count)
+                currentSessionIndex = Mathf.Max(0, sessions.Count - 1);
+            if (currentSessionIndex < 0)
+                currentSessionIndex = 0;
+
             OnSessionsChanged?.Invoke();
+            OnCurrentSessionChanged?.Invoke(currentSessionIndex);
+
+            Debug.Log($"[GarageManager] Заказ завершён. Осталось машин: {sessions.Count}");
         }
+
+        // ==================== ПЕРЕКЛЮЧЕНИЕ ====================
+
+        /// <summary>Выбрать активную машину в гараже.</summary>
+        public void SelectSession(int index)
+        {
+            if (index < 0 || index >= sessions.Count) return;
+            if (currentSessionIndex == index) return;
+
+            currentSessionIndex = index;
+            OnCurrentSessionChanged?.Invoke(currentSessionIndex);
+            Debug.Log($"[GarageManager] Выбрана машина #{index}: {sessions[index].car.displayName}");
+        }
+
+        /// <summary>Следующая машина (по кругу).</summary>
+        public void NextSession()
+        {
+            if (sessions.Count <= 1) return;
+            int next = (currentSessionIndex + 1) % sessions.Count;
+            SelectSession(next);
+        }
+
+        /// <summary>Предыдущая машина (по кругу).</summary>
+        public void PrevSession()
+        {
+            if (sessions.Count <= 1) return;
+            int prev = (currentSessionIndex - 1 + sessions.Count) % sessions.Count;
+            SelectSession(prev);
+        }
+
+        // ==================== АПГРЕЙДЫ ====================
 
         /// <summary>Апгрейд: двойной ремонт</summary>
         public void EnableDoubleRepair()
@@ -92,7 +162,8 @@ namespace AutoMechanic.Gameplay
             Debug.Log("[GarageManager] Двойной ремонт активирован");
         }
 
-        // ===== ТЕСТЫ =====
+        // ==================== ТЕСТЫ ====================
+
         [ContextMenu("ТЕСТ: взять из слота 0")]
         private void TestTake0() => TakeCarFromSlot(0);
 
@@ -105,15 +176,26 @@ namespace AutoMechanic.Gameplay
         [ContextMenu("ТЕСТ: включить двойной ремонт")]
         private void TestDouble() => EnableDoubleRepair();
 
+        [ContextMenu("ТЕСТ: следующая машина")]
+        private void TestNext() => NextSession();
+
+        [ContextMenu("ТЕСТ: предыдущая машина")]
+        private void TestPrev() => PrevSession();
+
         [ContextMenu("ТЕСТ: показать сессии")]
         private void TestDump()
         {
             var sb = new System.Text.StringBuilder("[GarageManager]\n");
             sb.AppendLine($"  MaxConcurrent: {maxConcurrentRepairs}");
+            sb.AppendLine($"  Active index: {currentSessionIndex}");
             if (sessions.Count == 0)
                 sb.AppendLine("  (пусто)");
-            foreach (var s in sessions)
-                sb.AppendLine($"  {s.car.displayName} | state={s.state} | слот {s.slotIndex}");
+            for (int i = 0; i < sessions.Count; i++)
+            {
+                var s = sessions[i];
+                string mark = i == currentSessionIndex ? " ← активная" : "";
+                sb.AppendLine($"  [{i}] {s.car.displayName} | state={s.state} | слот {s.slotIndex}{mark}");
+            }
             Debug.Log(sb.ToString());
         }
     }

@@ -8,14 +8,14 @@ using AutoMechanic.Gameplay;
 
 namespace AutoMechanic.UI
 {
-    /// <summary>
-    /// Панель диагностики. Показывает поломки текущей сессии, даёт кнопки
-    /// «Диагностика» и «Завершить заказ». Клик по строке → ремонт.
-    /// </summary>
     public class DiagnosticPanelUI : MonoBehaviour
     {
-        [Header("Корень панели (что скрывать, когда машин нет)")]
+        [Header("Корень панели")]
         [SerializeField] private GameObject rootPanel;
+
+        [Header("Табы выбора машины")]
+        [SerializeField] private Transform tabsContainer;
+        [SerializeField] private SessionTabUI tabPrefab;
 
         [Header("Тексты")]
         [SerializeField] private TMP_Text carNameText;
@@ -32,61 +32,81 @@ namespace AutoMechanic.UI
         [SerializeField] private TMP_Text completeButtonText;
 
         private readonly List<BreakdownRowUI> _rows = new List<BreakdownRowUI>();
-        private int _currentSession = 0;
+        private readonly List<SessionTabUI> _tabs = new List<SessionTabUI>();
 
         private void Start()
         {
             if (diagnoseButton != null) diagnoseButton.onClick.AddListener(OnDiagnoseClicked);
             if (completeButton != null) completeButton.onClick.AddListener(OnCompleteClicked);
 
-            if (GarageManager.Instance != null)
-                GarageManager.Instance.OnSessionsChanged += Refresh;
-            if (DiagnosticManager.Instance != null)
-                DiagnosticManager.Instance.OnDiagnosticsUpdated += OnDiagnosticsUpdated;
-
+            Subscribe();
             Refresh();
+        }
+
+        private void Subscribe()
+        {
+            if (GarageManager.Instance != null)
+            {
+                GarageManager.Instance.OnSessionsChanged -= Refresh;
+                GarageManager.Instance.OnSessionsChanged += Refresh;
+                GarageManager.Instance.OnCurrentSessionChanged -= OnSessionSwitched;
+                GarageManager.Instance.OnCurrentSessionChanged += OnSessionSwitched;
+            }
+            if (DiagnosticManager.Instance != null)
+            {
+                DiagnosticManager.Instance.OnDiagnosticsUpdated -= OnDiagnosticsUpdated;
+                DiagnosticManager.Instance.OnDiagnosticsUpdated += OnDiagnosticsUpdated;
+            }
         }
 
         private void OnDestroy()
         {
             if (GarageManager.Instance != null)
+            {
                 GarageManager.Instance.OnSessionsChanged -= Refresh;
+                GarageManager.Instance.OnCurrentSessionChanged -= OnSessionSwitched;
+            }
             if (DiagnosticManager.Instance != null)
                 DiagnosticManager.Instance.OnDiagnosticsUpdated -= OnDiagnosticsUpdated;
         }
 
         private void OnDiagnosticsUpdated(int _) => Refresh();
+        private void OnSessionSwitched(int _) => Refresh();
 
         private void OnDiagnoseClicked()
         {
             if (DiagnosticManager.Instance == null) return;
-            DiagnosticManager.Instance.RunDiagnosis(_currentSession);
+            DiagnosticManager.Instance.RunDiagnosis(GetCurrentIndex());
         }
 
         private void OnCompleteClicked()
         {
             if (RepairManager.Instance == null) return;
-            RepairManager.Instance.TryCompleteOrder(_currentSession);
+            RepairManager.Instance.TryCompleteOrder(GetCurrentIndex());
         }
 
         private void OnRowClicked(int sessionIndex, BreakdownData breakdown)
         {
             if (RepairManager.Instance == null) return;
-
             bool ok = RepairManager.Instance.TryRepair(sessionIndex, breakdown);
             if (!ok)
-            {
                 foreach (var r in _rows)
                     if (r != null && r.Breakdown == breakdown) r.FlashFail();
-            }
         }
 
-        /// <summary>Пересобрать всю панель</summary>
+        private int GetCurrentIndex()
+        {
+            return GarageManager.Instance != null ? GarageManager.Instance.CurrentSessionIndex : 0;
+        }
+
         public void Refresh()
         {
-            // Убираем старые строки
+            Subscribe();
+
             foreach (var r in _rows) if (r != null) Destroy(r.gameObject);
+            foreach (var t in _tabs) if (t != null) Destroy(t.gameObject);
             _rows.Clear();
+            _tabs.Clear();
 
             if (GarageManager.Instance == null || DiagnosticManager.Instance == null)
             {
@@ -96,7 +116,6 @@ namespace AutoMechanic.UI
 
             var sessions = GarageManager.Instance.Sessions;
 
-            // Если машин нет — прячем всю панель
             if (sessions.Count == 0)
             {
                 if (rootPanel != null) rootPanel.SetActive(false);
@@ -105,17 +124,27 @@ namespace AutoMechanic.UI
 
             if (rootPanel != null) rootPanel.SetActive(true);
 
-            // Защита от неверного индекса
-            if (_currentSession >= sessions.Count)
-                _currentSession = Mathf.Max(0, sessions.Count - 1);
+            int current = GarageManager.Instance.CurrentSessionIndex;
 
-            var session = sessions[_currentSession];
+            // === Табы ===
+            if (tabsContainer != null && tabPrefab != null)
+            {
+                for (int i = 0; i < sessions.Count; i++)
+                {
+                    var tab = Instantiate(tabPrefab, tabsContainer);
+                    int idx = i; // захват для лямбды
+                    tab.Bind(idx, OnTabClicked);
+                    tab.Refresh(sessions[i].car.displayName, i == current);
+                    _tabs.Add(tab);
+                }
+            }
+
+            var session = sessions[current];
 
             if (carNameText != null) carNameText.text = session.car.displayName;
 
             bool diagnosed = session.state != RepairState.NotDiagnosed;
 
-            // Кнопка «Диагностика»
             if (diagnoseButton != null)
                 diagnoseButton.interactable = !diagnosed && EconomyManager.Instance != null;
 
@@ -124,7 +153,6 @@ namespace AutoMechanic.UI
                     ? "Уже проверено"
                     : $"Диагностика (${DiagnosticManager.Instance.DiagnosisCost})";
 
-            // Ещё не диагностирована — не рисуем список
             if (!diagnosed)
             {
                 if (hintText != null)
@@ -134,18 +162,17 @@ namespace AutoMechanic.UI
                 return;
             }
 
-            // Рисуем строки
             foreach (var bd in session.brokenDownList)
             {
                 if (bd == null) continue;
                 var row = Instantiate(rowPrefab, rowsContainer);
-                bool isFixed = DiagnosticManager.Instance.IsFixed(_currentSession, bd);
-                row.Bind(_currentSession, bd, OnRowClicked);
+                bool isFixed = DiagnosticManager.Instance.IsFixed(current, bd);
+                row.Bind(current, bd, OnRowClicked);
                 row.RefreshVisual(isFixed);
                 _rows.Add(row);
             }
 
-            bool allFixed = DiagnosticManager.Instance.IsSessionComplete(_currentSession);
+            bool allFixed = DiagnosticManager.Instance.IsSessionComplete(current);
 
             if (hintText != null)
                 hintText.text = allFixed
@@ -157,6 +184,12 @@ namespace AutoMechanic.UI
 
             if (completeButtonText != null)
                 completeButtonText.text = "Завершить заказ";
+        }
+
+        private void OnTabClicked(int index)
+        {
+            if (GarageManager.Instance != null)
+                GarageManager.Instance.SelectSession(index);
         }
     }
 }

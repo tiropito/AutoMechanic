@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using AutoMechanic.Core;
 using AutoMechanic.Gameplay;
 
 namespace AutoMechanic.UI
@@ -46,7 +45,6 @@ namespace AutoMechanic.UI
             }
         }
 
-        /// <summary>Полная пересборка списка (при изменении количества слотов).</summary>
         public void Rebuild()
         {
             Subscribe();
@@ -86,7 +84,6 @@ namespace AutoMechanic.UI
             RefreshVisuals();
         }
 
-        /// <summary>Обновляет визуал строк без пересоздания.</summary>
         public void RefreshVisuals()
         {
             if (SlotManager.Instance == null) return;

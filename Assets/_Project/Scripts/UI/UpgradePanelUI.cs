@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,6 +12,9 @@ namespace AutoMechanic.UI
     /// </summary>
     public class UpgradePanelUI : MonoBehaviour
     {
+        /// <summary>Событие: открыта ли панель апгрейдов (true = открыта).</summary>
+        public static event Action<bool> OnUpgradeToggled;
+
         [Header("Ссылки")]
         [SerializeField] private GameObject rootPanel;
         [SerializeField] private TMP_Text moneyText;
@@ -57,11 +61,13 @@ namespace AutoMechanic.UI
         {
             if (rootPanel != null) rootPanel.SetActive(true);
             Refresh();
+            OnUpgradeToggled?.Invoke(true);
         }
 
         public void Close()
         {
             if (rootPanel != null) rootPanel.SetActive(false);
+            OnUpgradeToggled?.Invoke(false);
         }
 
         public void Toggle()

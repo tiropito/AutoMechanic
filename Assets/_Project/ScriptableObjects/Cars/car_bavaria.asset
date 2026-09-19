@@ -17,7 +17,7 @@ MonoBehaviour:
   prototype: BMW E30
   type: 3
   isBonus: 0
-  sprite: {fileID: 0}
+  sprite: {fileID: 8976363471976419977, guid: 4d469a8251f2b744eb852c6549022c05, type: 3}
   possibleBreakdowns:
   - {fileID: 11400000, guid: 5f0810a0aa5a3bb489ade8e705ddd668, type: 2}
   - {fileID: 11400000, guid: 31e01e34edfbc0849a8090ed9d219d4f, type: 2}

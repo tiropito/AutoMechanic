@@ -1,5 +1,12 @@
 {
   "dependencies": {
+    "com.bananaparty.yandexgames": {
+      "version": "https://github.com/forcepusher/com.bananaparty.yandexgames.git#18.0.1",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "1118bfb8fac153b4d82553df03b11d9ab83e9c2b"
+    },
     "com.unity.2d.animation": {
       "version": "13.0.6",
       "depth": 1,
