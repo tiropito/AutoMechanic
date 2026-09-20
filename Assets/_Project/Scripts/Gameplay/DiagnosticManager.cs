@@ -10,8 +10,11 @@ namespace AutoMechanic.Gameplay
     {
         public static DiagnosticManager Instance { get; private set; }
 
-        [Header("Настройки")]
-        [SerializeField] private int diagnosisCost = 10;
+        [Header("Стоимость диагностики по редкости машины")]
+        [Tooltip("Basic, Medium, Premium, Luxury, Secret")]
+        [SerializeField] private int[] diagnosisCosts = { 10, 25, 50, 100, 200 };
+
+        [Header("Количество поломок")]
         [SerializeField] private int minBreakdowns = 1;
         [SerializeField] private int maxBreakdowns = 3;
 
@@ -21,7 +24,6 @@ namespace AutoMechanic.Gameplay
         [SerializeField] private float weightRare = 20f;
         [SerializeField] private float weightEpic = 5f;
 
-        public int DiagnosisCost => diagnosisCost;
         public event Action<int> OnDiagnosticsUpdated;
 
         private void Awake()
@@ -30,6 +32,27 @@ namespace AutoMechanic.Gameplay
             Instance = this;
             DontDestroyOnLoad(gameObject);
         }
+
+        // ==================== СТОИМОСТЬ ====================
+
+        public int GetDiagnosisCost(CarData car)
+        {
+            if (car == null) return 10;
+            int idx = (int)car.rarity;
+            if (diagnosisCosts != null && idx >= 0 && idx < diagnosisCosts.Length)
+                return diagnosisCosts[idx];
+            return 10;
+        }
+
+        public int GetDiagnosisCost(int sessionIndex)
+        {
+            if (GarageManager.Instance == null) return 10;
+            var sessions = GarageManager.Instance.Sessions;
+            if (sessionIndex < 0 || sessionIndex >= sessions.Count) return 10;
+            return GetDiagnosisCost(sessions[sessionIndex].car);
+        }
+
+        // ==================== ДИАГНОСТИКА ====================
 
         public bool RunDiagnosis(int sessionIndex)
         {
@@ -46,7 +69,13 @@ namespace AutoMechanic.Gameplay
             if (session.state != RepairState.NotDiagnosed) return false;
 
             if (EconomyManager.Instance == null) return false;
-            if (!EconomyManager.Instance.Spend(diagnosisCost)) return false;
+
+            int cost = GetDiagnosisCost(session.car);
+            if (!EconomyManager.Instance.Spend(cost))
+            {
+                Debug.Log($"[DiagnosticManager] Не хватает на диагностику (${cost})");
+                return false;
+            }
 
             var pool = new List<BreakdownData>();
             if (session.car.possibleBreakdowns != null)
@@ -76,7 +105,7 @@ namespace AutoMechanic.Gameplay
 
             session.state = RepairState.Diagnosed;
 
-            Debug.Log($"[DiagnosticManager] Сессия {sessionIndex}: диагностика за ${diagnosisCost}, поломок: {count}");
+            Debug.Log($"[DiagnosticManager] Сессия {sessionIndex}: диагностика за ${cost}, поломок: {count}");
             foreach (var bd in session.brokenDownList)
                 Debug.Log($"   → {bd.displayName} (вес: {GetBreakdownWeight(bd)})");
 
@@ -100,12 +129,6 @@ namespace AutoMechanic.Gameplay
             return sessions[sessionIndex].fixedList.Contains(breakdown);
         }
 
-        /// <summary>Принудительно уведомить UI об изменениях (например, началась установка).</summary>
-        public void NotifyChanged(int sessionIndex)
-        {
-            OnDiagnosticsUpdated?.Invoke(sessionIndex);
-        }
-
         public void MarkFixed(int sessionIndex, BreakdownData breakdown)
         {
             if (GarageManager.Instance == null || breakdown == null) return;
@@ -124,6 +147,11 @@ namespace AutoMechanic.Gameplay
                 Debug.Log($"[DiagnosticManager] Сессия {sessionIndex} готова!");
             }
 
+            OnDiagnosticsUpdated?.Invoke(sessionIndex);
+        }
+
+        public void NotifyChanged(int sessionIndex)
+        {
             OnDiagnosticsUpdated?.Invoke(sessionIndex);
         }
 

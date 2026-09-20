@@ -31,6 +31,10 @@ namespace AutoMechanic.UI
         [SerializeField] private Button completeButton;
         [SerializeField] private TMP_Text completeButtonText;
 
+        [Header("Кнопка «Продать как есть»")]
+        [SerializeField] private Button sellAsIsButton;
+        [SerializeField] private TMP_Text sellAsIsButtonText;
+
         private readonly List<BreakdownRowUI> _rows = new List<BreakdownRowUI>();
         private readonly List<SessionTabUI> _tabs = new List<SessionTabUI>();
 
@@ -38,6 +42,7 @@ namespace AutoMechanic.UI
         {
             if (diagnoseButton != null) diagnoseButton.onClick.AddListener(OnDiagnoseClicked);
             if (completeButton != null) completeButton.onClick.AddListener(OnCompleteClicked);
+            if (sellAsIsButton != null) sellAsIsButton.onClick.AddListener(OnSellAsIsClicked);
 
             Subscribe();
             Refresh();
@@ -85,6 +90,12 @@ namespace AutoMechanic.UI
             RepairManager.Instance.TryCompleteOrder(GetCurrentIndex());
         }
 
+        private void OnSellAsIsClicked()
+        {
+            if (RepairManager.Instance == null) return;
+            RepairManager.Instance.TrySellAsIs(GetCurrentIndex());
+        }
+
         private void OnRowClicked(int sessionIndex, BreakdownData breakdown)
         {
             if (RepairManager.Instance == null) return;
@@ -105,7 +116,6 @@ namespace AutoMechanic.UI
         {
             Subscribe();
 
-            // Убираем старые строки и табы
             foreach (var r in _rows) if (r != null) Destroy(r.gameObject);
             foreach (var t in _tabs) if (t != null) Destroy(t.gameObject);
             _rows.Clear();
@@ -148,13 +158,29 @@ namespace AutoMechanic.UI
 
             bool diagnosed = session.state != RepairState.NotDiagnosed;
 
+            // === Стоимость диагностики по редкости машины ===
+            int diagCost = DiagnosticManager.Instance.GetDiagnosisCost(current);
+
             if (diagnoseButton != null)
                 diagnoseButton.interactable = !diagnosed && EconomyManager.Instance != null;
 
             if (diagnoseButtonText != null)
                 diagnoseButtonText.text = diagnosed
                     ? "Уже проверено"
-                    : $"Диагностика (${DiagnosticManager.Instance.DiagnosisCost})";
+                    : $"Диагностика (${diagCost})";
+
+            // === Кнопка «Продать как есть» ===
+            if (sellAsIsButtonText != null && RepairManager.Instance != null)
+            {
+                int price = RepairManager.Instance.CalculateSellAsIsPrice(current);
+                if (price > 0)
+                    sellAsIsButtonText.text = $"Продать как есть (+${price})";
+                else if (price < 0)
+                    sellAsIsButtonText.text = $"Отказаться (${price})";
+                else
+                    sellAsIsButtonText.text = "Продать как есть";
+            }
+            if (sellAsIsButton != null) sellAsIsButton.interactable = true;
 
             if (!diagnosed)
             {
@@ -165,7 +191,6 @@ namespace AutoMechanic.UI
                 return;
             }
 
-            // === Строки поломок ===
             foreach (var bd in session.brokenDownList)
             {
                 if (bd == null) continue;

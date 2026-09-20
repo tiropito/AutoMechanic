@@ -7,6 +7,7 @@ namespace AutoMechanic.Gameplay
 {
     /// <summary>
     /// Ремонт: ставит детали с таймером установки, начисляет рефанд, завершает заказ.
+    /// Плюс продажа недоремонтированной машины.
     /// </summary>
     public class RepairManager : MonoBehaviour
     {
@@ -26,6 +27,13 @@ namespace AutoMechanic.Gameplay
 
         [Tooltip("Во сколько раз больше за бонусную машину")]
         [SerializeField] private int bonusMultiplier = 2;
+
+        [Header("Продажа недоремонтированной машины")]
+        [Tooltip("Процент от стоимости установленных деталей, который получит игрок")]
+        [SerializeField] private float sellAsIsRate = 0.4f;
+
+        [Tooltip("Штраф за отказ от заказа без починки (0 поломок)")]
+        [SerializeField] private int sellAsIsNoRepairFee = 50;
 
         private void Awake()
         {
@@ -79,7 +87,6 @@ namespace AutoMechanic.Gameplay
 
         // ==================== ПОЧИНКА / УСТАНОВКА ====================
 
-        /// <summary>Запускает установку детали. Рефанд сразу, фикс — через таймер.</summary>
         public bool TryRepair(int sessionIndex, BreakdownData breakdown)
         {
             var reason = GetRepairFailReason(sessionIndex, breakdown);
@@ -89,11 +96,9 @@ namespace AutoMechanic.Gameplay
                 return false;
             }
 
-            // Списываем детали
             foreach (var part in breakdown.requiredParts)
                 InventoryManager.Instance.Remove(part.id, 1);
 
-            // Рефанд сразу
             int refund = breakdown.GetPartsCost();
             if (EconomyManager.Instance != null && refund > 0)
             {
@@ -101,7 +106,6 @@ namespace AutoMechanic.Gameplay
                 Debug.Log($"[RepairManager] Рефанд за «{breakdown.displayName}»: +${refund}");
             }
 
-            // Запускаем таймер
             var session = GarageManager.Instance.Sessions[sessionIndex];
             if (session.installingList == null) session.installingList = new List<BreakdownTimer>();
 
@@ -118,7 +122,6 @@ namespace AutoMechanic.Gameplay
 
             Debug.Log($"[RepairManager] Установка «{breakdown.displayName}»: {duration} сек");
 
-            // Сообщаем UI обновиться
             if (DiagnosticManager.Instance != null)
                 DiagnosticManager.Instance.NotifyChanged(sessionIndex);
 
@@ -131,7 +134,6 @@ namespace AutoMechanic.Gameplay
             return failReason == null;
         }
 
-        /// <summary>Идёт ли сейчас установка этой поломки.</summary>
         public bool IsInstalling(int sessionIndex, BreakdownData breakdown)
         {
             if (GarageManager.Instance == null || breakdown == null) return false;
@@ -146,7 +148,6 @@ namespace AutoMechanic.Gameplay
             return false;
         }
 
-        /// <summary>Сколько секунд осталось до конца установки.</summary>
         public float GetInstallTimeLeft(int sessionIndex, BreakdownData breakdown)
         {
             if (GarageManager.Instance == null || breakdown == null) return 0f;
@@ -161,7 +162,6 @@ namespace AutoMechanic.Gameplay
             return 0f;
         }
 
-        /// <summary>Прогресс установки 0..1.</summary>
         public float GetInstallProgress(int sessionIndex, BreakdownData breakdown)
         {
             if (GarageManager.Instance == null || breakdown == null) return 0f;
@@ -205,7 +205,6 @@ namespace AutoMechanic.Gameplay
             if (session.fixedList.Contains(breakdown))
                 return $"Поломка «{breakdown.displayName}» уже устранена";
 
-            // Уже устанавливается?
             if (IsInstalling(sessionIndex, breakdown))
                 return $"«{breakdown.displayName}» уже устанавливается";
 
@@ -241,7 +240,6 @@ namespace AutoMechanic.Gameplay
 
             var session = sessions[sessionIndex];
 
-            // Проверка: все таймеры завершены?
             if (session.installingList != null && session.installingList.Count > 0)
             {
                 Debug.LogWarning("[RepairManager] Есть незавершённые установки");
@@ -268,6 +266,67 @@ namespace AutoMechanic.Gameplay
             GarageManager.Instance.CompleteRepair(sessionIndex);
             return true;
         }
+
+        // ==================== ПРОДАЖА КАК ЕСТЬ ====================
+
+        public bool TrySellAsIs(int sessionIndex)
+        {
+            if (GarageManager.Instance == null || EconomyManager.Instance == null) return false;
+
+            var sessions = GarageManager.Instance.Sessions;
+            if (sessionIndex < 0 || sessionIndex >= sessions.Count) return false;
+
+            var session = sessions[sessionIndex];
+            int price = CalculateSellAsIsPrice(sessionIndex);
+
+            if (price > 0)
+            {
+                EconomyManager.Instance.Add(price);
+                Debug.Log($"[RepairManager] Продано как есть: {session.car.displayName}, +${price}");
+            }
+            else if (price < 0)
+            {
+                int fee = Mathf.Min(-price, EconomyManager.Instance.Money);
+                if (fee > 0) EconomyManager.Instance.Spend(fee);
+                Debug.Log($"[RepairManager] Отказ от заказа: {session.car.displayName}, −${fee} (штраф)");
+            }
+            else
+            {
+                Debug.Log($"[RepairManager] Продано как есть: {session.car.displayName}, +$0");
+            }
+
+            GarageManager.Instance.CompleteRepair(sessionIndex);
+            return true;
+        }
+
+        public int CalculateSellAsIsPrice(int sessionIndex)
+        {
+            if (GarageManager.Instance == null) return 0;
+            var sessions = GarageManager.Instance.Sessions;
+            if (sessionIndex < 0 || sessionIndex >= sessions.Count) return 0;
+
+            var session = sessions[sessionIndex];
+
+            int fixedCount = session.fixedList != null ? session.fixedList.Count : 0;
+            bool hasInstalling = session.installingList != null && session.installingList.Count > 0;
+            if (fixedCount == 0 && !hasInstalling)
+                return -sellAsIsNoRepairFee;
+
+            int fixedPartsCost = 0;
+            if (session.fixedList != null)
+                foreach (var bd in session.fixedList)
+                    if (bd != null) fixedPartsCost += bd.GetPartsCost();
+
+            int price = Mathf.RoundToInt(fixedPartsCost * sellAsIsRate);
+
+            if (price >= 1000) price = Mathf.RoundToInt(price / 100f) * 100;
+            else if (price >= 100) price = Mathf.RoundToInt(price / 10f) * 10;
+            else if (price >= 10) price = Mathf.RoundToInt(price / 5f) * 5;
+
+            return price;
+        }
+
+        // ==================== ЭКОНОМИКА ЗАКАЗА ====================
 
         private int CalculateOrderReward(RepairSession session)
         {
@@ -313,18 +372,10 @@ namespace AutoMechanic.Gameplay
         [ContextMenu("ТЕСТ: завершить все таймеры сессии 0")]
         private void TestFinishTimers0()
         {
-            if (GarageManager.Instance == null || GarageManager.Instance.Sessions.Count == 0)
-            {
-                Debug.Log("[RepairManager] Сессия 0 пуста");
-                return;
-            }
+            if (GarageManager.Instance == null || GarageManager.Instance.Sessions.Count == 0) return;
 
             var session = GarageManager.Instance.Sessions[0];
-            if (session.installingList == null || session.installingList.Count == 0)
-            {
-                Debug.Log("[RepairManager] Нет активных таймеров");
-                return;
-            }
+            if (session.installingList == null || session.installingList.Count == 0) return;
 
             for (int i = session.installingList.Count - 1; i >= 0; i--)
             {
@@ -337,6 +388,9 @@ namespace AutoMechanic.Gameplay
 
         [ContextMenu("ТЕСТ: завершить заказ 0")]
         private void TestComplete0() => TryCompleteOrder(0);
+
+        [ContextMenu("ТЕСТ: продать как есть сессию 0")]
+        private void TestSellAsIs0() => TrySellAsIs(0);
 
         [ContextMenu("ТЕСТ: показать экономику сессии 0")]
         private void TestShowEconomics0()
@@ -367,13 +421,15 @@ namespace AutoMechanic.Gameplay
                 ? breakdownRarityBonus[rIdx] : 0f;
 
             int reward = CalculateOrderReward(session);
+            int sellPrice = CalculateSellAsIsPrice(0);
 
             var sb = new System.Text.StringBuilder("[RepairManager] Экономика сессии 0:\n");
             sb.AppendLine($"  Машина: {session.car.displayName} [{session.car.rarity}]");
             sb.AppendLine($"  Детали: ${cost}");
             sb.AppendLine($"  Ставка машины: +{mRate * 100:F0}%");
             sb.AppendLine($"  Бонус поломки: +{rBonus * 100:F0}%");
-            sb.AppendLine($"  Профит: +${reward}");
+            sb.AppendLine($"  Профит заказа: +${reward}");
+            sb.AppendLine($"  Продажа как есть: {(sellPrice >= 0 ? "+" : "")}${sellPrice}");
             if (cost > 0) sb.AppendLine($"  Окупаемость: ×{(cost + reward) / (float)cost:F2}");
             Debug.Log(sb.ToString());
         }
