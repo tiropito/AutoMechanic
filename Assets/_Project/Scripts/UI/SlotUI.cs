@@ -67,7 +67,10 @@ namespace AutoMechanic.UI
 
             // Имя
             if (nameText != null)
+            {
                 nameText.text = hasCar ? slot.currentCar.displayName : "...";
+                nameText.color = hasCar ? slot.currentCar.RarityColor : new Color(0.6f, 0.6f, 0.6f);
+            }
 
             // ★
             if (bonusMark != null)

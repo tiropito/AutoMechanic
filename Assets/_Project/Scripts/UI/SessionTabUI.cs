@@ -2,11 +2,13 @@ using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using AutoMechanic.Data;
 
 namespace AutoMechanic.UI
 {
     /// <summary>
     /// Один таб переключения между машинами в гараже.
+    /// Название окрашено по редкости машины.
     /// </summary>
     public class SessionTabUI : MonoBehaviour
     {
@@ -33,10 +35,30 @@ namespace AutoMechanic.UI
             }
         }
 
+        /// <summary>Обновить таб. car — машина, для цвета названия по редкости.</summary>
+        public void Refresh(CarData car, bool isSelected)
+        {
+            if (label != null)
+            {
+                label.text = car != null ? car.displayName : "Машина";
+                label.color = car != null ? car.RarityColor : Color.white;
+            }
+
+            if (background != null)
+                background.color = isSelected ? selectedColor : normalColor;
+        }
+
+        /// <summary>Совместимость со старым вызовом (только строка).</summary>
         public void Refresh(string carName, bool isSelected)
         {
-            if (label != null) label.text = carName;
-            if (background != null) background.color = isSelected ? selectedColor : normalColor;
+            if (label != null)
+            {
+                label.text = carName;
+                label.color = Color.white;
+            }
+
+            if (background != null)
+                background.color = isSelected ? selectedColor : normalColor;
         }
     }
 }

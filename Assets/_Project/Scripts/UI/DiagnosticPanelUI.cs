@@ -147,14 +147,18 @@ namespace AutoMechanic.UI
                     var tab = Instantiate(tabPrefab, tabsContainer);
                     int idx = i;
                     tab.Bind(idx, OnTabClicked);
-                    tab.Refresh(sessions[i].car.displayName, i == current);
+                    tab.Refresh(sessions[i].car, i == current);
                     _tabs.Add(tab);
                 }
             }
 
             var session = sessions[current];
 
-            if (carNameText != null) carNameText.text = session.car.displayName;
+            if (carNameText != null)
+            {
+                carNameText.text = session.car.displayName;
+                carNameText.color = session.car.RarityColor;
+            }
 
             bool diagnosed = session.state != RepairState.NotDiagnosed;
 
