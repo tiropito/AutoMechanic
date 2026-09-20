@@ -90,8 +90,10 @@ namespace AutoMechanic.UI
             if (RepairManager.Instance == null) return;
             bool ok = RepairManager.Instance.TryRepair(sessionIndex, breakdown);
             if (!ok)
+            {
                 foreach (var r in _rows)
                     if (r != null && r.Breakdown == breakdown) r.FlashFail();
+            }
         }
 
         private int GetCurrentIndex()
@@ -103,6 +105,7 @@ namespace AutoMechanic.UI
         {
             Subscribe();
 
+            // Убираем старые строки и табы
             foreach (var r in _rows) if (r != null) Destroy(r.gameObject);
             foreach (var t in _tabs) if (t != null) Destroy(t.gameObject);
             _rows.Clear();
@@ -132,7 +135,7 @@ namespace AutoMechanic.UI
                 for (int i = 0; i < sessions.Count; i++)
                 {
                     var tab = Instantiate(tabPrefab, tabsContainer);
-                    int idx = i; // захват для лямбды
+                    int idx = i;
                     tab.Bind(idx, OnTabClicked);
                     tab.Refresh(sessions[i].car.displayName, i == current);
                     _tabs.Add(tab);
@@ -162,13 +165,12 @@ namespace AutoMechanic.UI
                 return;
             }
 
+            // === Строки поломок ===
             foreach (var bd in session.brokenDownList)
             {
                 if (bd == null) continue;
                 var row = Instantiate(rowPrefab, rowsContainer);
-                bool isFixed = DiagnosticManager.Instance.IsFixed(current, bd);
                 row.Bind(current, bd, OnRowClicked);
-                row.RefreshVisual(isFixed);
                 _rows.Add(row);
             }
 

@@ -165,13 +165,37 @@ namespace AutoMechanic.Gameplay
         Completed
     }
 
-    [Serializable]
-    public class RepairSession
-    {
-        public CarData car;
-        public int slotIndex;
-        public RepairState state;
-        public List<BreakdownData> brokenDownList = new List<BreakdownData>();
-        public List<BreakdownData> fixedList = new List<BreakdownData>();
-    }
+        [Serializable]
+        public class RepairSession
+        {
+            public CarData car;
+            public int slotIndex;
+            public RepairState state;
+            public List<BreakdownData> brokenDownList = new List<BreakdownData>();
+            public List<BreakdownData> fixedList = new List<BreakdownData>();
+
+            /// <summary>Активные таймеры установки деталей.</summary>
+            public List<BreakdownTimer> installingList = new List<BreakdownTimer>();
+        }
+
+        /// <summary>Активный таймер установки одной поломки.</summary>
+        [Serializable]
+        public class BreakdownTimer
+        {
+            public BreakdownData breakdown;
+            public float startTime;       // Time.realtimeSinceStartup при старте
+            public float endTime;         // Когда завершится
+            public float totalDuration;   // Общая длительность
+
+            public float TimeLeft => Mathf.Max(0f, endTime - Time.realtimeSinceStartup);
+
+            public float Progress
+            {
+                get
+                {
+                    if (totalDuration <= 0f) return 1f;
+                    return Mathf.Clamp01((Time.realtimeSinceStartup - startTime) / totalDuration);
+                }
+            }
+        }
 }

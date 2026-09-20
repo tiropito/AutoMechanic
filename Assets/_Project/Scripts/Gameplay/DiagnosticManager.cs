@@ -100,6 +100,12 @@ namespace AutoMechanic.Gameplay
             return sessions[sessionIndex].fixedList.Contains(breakdown);
         }
 
+        /// <summary>Принудительно уведомить UI об изменениях (например, началась установка).</summary>
+        public void NotifyChanged(int sessionIndex)
+        {
+            OnDiagnosticsUpdated?.Invoke(sessionIndex);
+        }
+
         public void MarkFixed(int sessionIndex, BreakdownData breakdown)
         {
             if (GarageManager.Instance == null || breakdown == null) return;

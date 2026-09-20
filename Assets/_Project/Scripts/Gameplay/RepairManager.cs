@@ -6,15 +6,18 @@ using AutoMechanic.Data;
 namespace AutoMechanic.Gameplay
 {
     /// <summary>
-    /// Ремонт: ставит детали, начисляет рефанд, завершает заказ.
-    /// Экономика: рефанд при установке + награда за заказ по редкости машины и поломок.
+    /// Ремонт: ставит детали с таймером установки, начисляет рефанд, завершает заказ.
     /// </summary>
     public class RepairManager : MonoBehaviour
     {
         public static RepairManager Instance { get; private set; }
 
+        [Header("Время установки (по редкости поломки)")]
+        [Tooltip("Common, Uncommon, Rare, Epic — секунды")]
+        [SerializeField] private float[] installTimes = { 3f, 5f, 10f, 20f };
+
         [Header("Профит по редкости машины")]
-        [Tooltip("Basic, Medium, Premium, Luxury, Secret — прибавка к окупаемости")]
+        [Tooltip("Basic, Medium, Premium, Luxury, Secret")]
         [SerializeField] private float[] machineProfitRates = { 0.25f, 0.40f, 0.75f, 1.00f, 1.50f };
 
         [Header("Бонус к профиту за редкость поломок")]
@@ -31,9 +34,52 @@ namespace AutoMechanic.Gameplay
             DontDestroyOnLoad(gameObject);
         }
 
-        // ==================== ПОЧИНКА ОДНОЙ ПОЛОМКИ ====================
+        private void Update()
+        {
+            TickTimers();
+        }
 
-        /// <summary>Установить деталь. Начисляет рефанд = стоимость деталей.</summary>
+        // ==================== ТАЙМЕРЫ ====================
+
+        private void TickTimers()
+        {
+            if (GarageManager.Instance == null) return;
+            var sessions = GarageManager.Instance.Sessions;
+
+            for (int i = 0; i < sessions.Count; i++)
+            {
+                var session = sessions[i];
+                if (session.installingList == null || session.installingList.Count == 0) continue;
+
+                for (int j = session.installingList.Count - 1; j >= 0; j--)
+                {
+                    var timer = session.installingList[j];
+                    if (timer == null)
+                    {
+                        session.installingList.RemoveAt(j);
+                        continue;
+                    }
+
+                    if (Time.realtimeSinceStartup >= timer.endTime)
+                    {
+                        session.installingList.RemoveAt(j);
+                        CompleteInstall(i, timer.breakdown);
+                    }
+                }
+            }
+        }
+
+        private void CompleteInstall(int sessionIndex, BreakdownData breakdown)
+        {
+            Debug.Log($"[RepairManager] Установка «{breakdown.displayName}» завершена");
+
+            if (DiagnosticManager.Instance != null)
+                DiagnosticManager.Instance.MarkFixed(sessionIndex, breakdown);
+        }
+
+        // ==================== ПОЧИНКА / УСТАНОВКА ====================
+
+        /// <summary>Запускает установку детали. Рефанд сразу, фикс — через таймер.</summary>
         public bool TryRepair(int sessionIndex, BreakdownData breakdown)
         {
             var reason = GetRepairFailReason(sessionIndex, breakdown);
@@ -43,9 +89,11 @@ namespace AutoMechanic.Gameplay
                 return false;
             }
 
+            // Списываем детали
             foreach (var part in breakdown.requiredParts)
                 InventoryManager.Instance.Remove(part.id, 1);
 
+            // Рефанд сразу
             int refund = breakdown.GetPartsCost();
             if (EconomyManager.Instance != null && refund > 0)
             {
@@ -53,8 +101,26 @@ namespace AutoMechanic.Gameplay
                 Debug.Log($"[RepairManager] Рефанд за «{breakdown.displayName}»: +${refund}");
             }
 
+            // Запускаем таймер
+            var session = GarageManager.Instance.Sessions[sessionIndex];
+            if (session.installingList == null) session.installingList = new List<BreakdownTimer>();
+
+            float duration = GetInstallTime(breakdown);
+            float now = Time.realtimeSinceStartup;
+
+            session.installingList.Add(new BreakdownTimer
+            {
+                breakdown = breakdown,
+                startTime = now,
+                endTime = now + duration,
+                totalDuration = duration
+            });
+
+            Debug.Log($"[RepairManager] Установка «{breakdown.displayName}»: {duration} сек");
+
+            // Сообщаем UI обновиться
             if (DiagnosticManager.Instance != null)
-                DiagnosticManager.Instance.MarkFixed(sessionIndex, breakdown);
+                DiagnosticManager.Instance.NotifyChanged(sessionIndex);
 
             return true;
         }
@@ -63,6 +129,60 @@ namespace AutoMechanic.Gameplay
         {
             failReason = GetRepairFailReason(sessionIndex, breakdown);
             return failReason == null;
+        }
+
+        /// <summary>Идёт ли сейчас установка этой поломки.</summary>
+        public bool IsInstalling(int sessionIndex, BreakdownData breakdown)
+        {
+            if (GarageManager.Instance == null || breakdown == null) return false;
+            var sessions = GarageManager.Instance.Sessions;
+            if (sessionIndex < 0 || sessionIndex >= sessions.Count) return false;
+
+            var session = sessions[sessionIndex];
+            if (session.installingList == null) return false;
+
+            foreach (var t in session.installingList)
+                if (t != null && t.breakdown == breakdown) return true;
+            return false;
+        }
+
+        /// <summary>Сколько секунд осталось до конца установки.</summary>
+        public float GetInstallTimeLeft(int sessionIndex, BreakdownData breakdown)
+        {
+            if (GarageManager.Instance == null || breakdown == null) return 0f;
+            var sessions = GarageManager.Instance.Sessions;
+            if (sessionIndex < 0 || sessionIndex >= sessions.Count) return 0f;
+
+            var session = sessions[sessionIndex];
+            if (session.installingList == null) return 0f;
+
+            foreach (var t in session.installingList)
+                if (t != null && t.breakdown == breakdown) return t.TimeLeft;
+            return 0f;
+        }
+
+        /// <summary>Прогресс установки 0..1.</summary>
+        public float GetInstallProgress(int sessionIndex, BreakdownData breakdown)
+        {
+            if (GarageManager.Instance == null || breakdown == null) return 0f;
+            var sessions = GarageManager.Instance.Sessions;
+            if (sessionIndex < 0 || sessionIndex >= sessions.Count) return 0f;
+
+            var session = sessions[sessionIndex];
+            if (session.installingList == null) return 0f;
+
+            foreach (var t in session.installingList)
+                if (t != null && t.breakdown == breakdown) return t.Progress;
+            return 0f;
+        }
+
+        private float GetInstallTime(BreakdownData breakdown)
+        {
+            if (breakdown == null) return 3f;
+            int idx = (int)breakdown.GetRarity();
+            if (installTimes != null && idx >= 0 && idx < installTimes.Length)
+                return installTimes[idx];
+            return 3f;
         }
 
         private string GetRepairFailReason(int sessionIndex, BreakdownData breakdown)
@@ -84,6 +204,11 @@ namespace AutoMechanic.Gameplay
                 return $"Поломка «{breakdown.displayName}» не относится к этой машине";
             if (session.fixedList.Contains(breakdown))
                 return $"Поломка «{breakdown.displayName}» уже устранена";
+
+            // Уже устанавливается?
+            if (IsInstalling(sessionIndex, breakdown))
+                return $"«{breakdown.displayName}» уже устанавливается";
+
             if (breakdown.requiredParts == null || breakdown.requiredParts.Length == 0)
                 return $"У поломки «{breakdown.displayName}» не заданы детали";
 
@@ -114,13 +239,21 @@ namespace AutoMechanic.Gameplay
                 return false;
             }
 
+            var session = sessions[sessionIndex];
+
+            // Проверка: все таймеры завершены?
+            if (session.installingList != null && session.installingList.Count > 0)
+            {
+                Debug.LogWarning("[RepairManager] Есть незавершённые установки");
+                return false;
+            }
+
             if (!DiagnosticManager.Instance.IsSessionComplete(sessionIndex))
             {
                 Debug.LogWarning("[RepairManager] Не все поломки устранены");
                 return false;
             }
 
-            var session = sessions[sessionIndex];
             int reward = CalculateOrderReward(session);
 
             if (EconomyManager.Instance != null)
@@ -177,13 +310,29 @@ namespace AutoMechanic.Gameplay
 
         // ==================== ТЕСТЫ ====================
 
-        [ContextMenu("ТЕСТ: починить ВСЁ в сессии 0")]
-        private void TestRepairAll0()
+        [ContextMenu("ТЕСТ: завершить все таймеры сессии 0")]
+        private void TestFinishTimers0()
         {
-            var list = DiagnosticManager.Instance != null
-                ? DiagnosticManager.Instance.GetBreakdowns(0) : null;
-            if (list == null || list.Count == 0) { Debug.Log("[RepairManager] Сессия 0 пуста"); return; }
-            for (int i = list.Count - 1; i >= 0; i--) TryRepair(0, list[i]);
+            if (GarageManager.Instance == null || GarageManager.Instance.Sessions.Count == 0)
+            {
+                Debug.Log("[RepairManager] Сессия 0 пуста");
+                return;
+            }
+
+            var session = GarageManager.Instance.Sessions[0];
+            if (session.installingList == null || session.installingList.Count == 0)
+            {
+                Debug.Log("[RepairManager] Нет активных таймеров");
+                return;
+            }
+
+            for (int i = session.installingList.Count - 1; i >= 0; i--)
+            {
+                var timer = session.installingList[i];
+                if (timer == null) continue;
+                session.installingList.RemoveAt(i);
+                CompleteInstall(0, timer.breakdown);
+            }
         }
 
         [ContextMenu("ТЕСТ: завершить заказ 0")]
@@ -205,8 +354,7 @@ namespace AutoMechanic.Gameplay
             foreach (var bd in session.brokenDownList)
             {
                 if (bd == null) continue;
-                int bdCost = bd.GetPartsCost();
-                cost += bdCost;
+                cost += bd.GetPartsCost();
                 var r = bd.GetRarity();
                 if (r > maxR) maxR = r;
             }
@@ -222,11 +370,10 @@ namespace AutoMechanic.Gameplay
 
             var sb = new System.Text.StringBuilder("[RepairManager] Экономика сессии 0:\n");
             sb.AppendLine($"  Машина: {session.car.displayName} [{session.car.rarity}]");
-            sb.AppendLine($"  Детали (всего): ${cost}");
-            sb.AppendLine($"  Макс. редкость поломки: {maxR}");
+            sb.AppendLine($"  Детали: ${cost}");
             sb.AppendLine($"  Ставка машины: +{mRate * 100:F0}%");
             sb.AppendLine($"  Бонус поломки: +{rBonus * 100:F0}%");
-            sb.AppendLine($"  Итоговый профит: +${reward}");
+            sb.AppendLine($"  Профит: +${reward}");
             if (cost > 0) sb.AppendLine($"  Окупаемость: ×{(cost + reward) / (float)cost:F2}");
             Debug.Log(sb.ToString());
         }
