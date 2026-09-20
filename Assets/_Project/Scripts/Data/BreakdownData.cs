@@ -2,24 +2,16 @@ using UnityEngine;
 
 namespace AutoMechanic.Data
 {
-    /// <summary>
-    /// Визуальный эффект поломки на машине.
-    /// </summary>
     public enum BreakdownVisual
     {
-        Smoke,   // Дым — двигатель
-        Flat,    // Спущено — колесо
-        Jerk,    // Дёргается — КПП
-        Rust,    // Пятна ржавчины — кузов
-        Squeak,  // Визг — тормоза
-        NoLight  // Не горят фары — электрика
+        Smoke,
+        Flat,
+        Jerk,
+        Rust,
+        Squeak,
+        NoLight
     }
 
-    /// <summary>
-    /// Описание одной поломки.
-    /// Может требовать 1 или 2 детали (ржавчина = ремкомплект + краска).
-    /// Создаётся через: Assets → Create → AutoMechanic → Breakdown Data.
-    /// </summary>
     [CreateAssetMenu(fileName = "NewBreakdownData", menuName = "AutoMechanic/Breakdown Data")]
     public class BreakdownData : ScriptableObject
     {
@@ -28,17 +20,36 @@ namespace AutoMechanic.Data
         public string displayName;
 
         [Header("Ремонт")]
-        [Tooltip("Какие детали нужны. Обычно 1, для ржавчины — 2")]
         public PartData[] requiredParts;
 
-        [Tooltip("Сколько денег дают за устранение этой поломки (20-50)")]
-        [Range(0, 500)]
+        [Tooltip("Сколько денег дают за устранение этой поломки")]
+        [Range(0, 20000)]
         public int repairReward = 20;
 
         [Header("Визуал")]
         public BreakdownVisual visual;
-
-        [Tooltip("Иконка поломки для панели диагностики")]
         public Sprite icon;
+
+        /// <summary>Редкость поломки = самая редкая деталь из requiredParts.</summary>
+        public PartRarity GetRarity()
+        {
+            if (requiredParts == null || requiredParts.Length == 0)
+                return PartRarity.Common;
+
+            PartRarity max = PartRarity.Common;
+            foreach (var p in requiredParts)
+                if (p != null && p.rarity > max) max = p.rarity;
+            return max;
+        }
+
+        /// <summary>Суммарная стоимость деталей для этой поломки.</summary>
+        public int GetPartsCost()
+        {
+            if (requiredParts == null) return 0;
+            int total = 0;
+            foreach (var p in requiredParts)
+                if (p != null) total += p.buyPrice;
+            return total;
+        }
     }
 }

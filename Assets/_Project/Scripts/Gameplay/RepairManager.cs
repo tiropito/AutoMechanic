@@ -6,17 +6,22 @@ using AutoMechanic.Data;
 namespace AutoMechanic.Gameplay
 {
     /// <summary>
-    /// Ремонт: ставит детали из инвентаря, начисляет награду за поломку, завершает заказ.
+    /// Ремонт: ставит детали, начисляет рефанд, завершает заказ.
+    /// Экономика: рефанд при установке + награда за заказ по редкости машины и поломок.
     /// </summary>
     public class RepairManager : MonoBehaviour
     {
         public static RepairManager Instance { get; private set; }
 
-        [Header("Награда за завершение заказа")]
-        [SerializeField] private int minOrderReward = 50;
-        [SerializeField] private int maxOrderReward = 200;
+        [Header("Профит по редкости машины")]
+        [Tooltip("Basic, Medium, Premium, Luxury, Secret — прибавка к окупаемости")]
+        [SerializeField] private float[] machineProfitRates = { 0.25f, 0.40f, 0.75f, 1.00f, 1.50f };
 
-        [Tooltip("Во сколько раз больше платят за бонусную машину (⭐)")]
+        [Header("Бонус к профиту за редкость поломок")]
+        [Tooltip("Common, Uncommon, Rare, Epic")]
+        [SerializeField] private float[] breakdownRarityBonus = { 0f, 0.05f, 0.15f, 0.30f };
+
+        [Tooltip("Во сколько раз больше за бонусную машину")]
         [SerializeField] private int bonusMultiplier = 2;
 
         private void Awake()
@@ -28,6 +33,7 @@ namespace AutoMechanic.Gameplay
 
         // ==================== ПОЧИНКА ОДНОЙ ПОЛОМКИ ====================
 
+        /// <summary>Установить деталь. Начисляет рефанд = стоимость деталей.</summary>
         public bool TryRepair(int sessionIndex, BreakdownData breakdown)
         {
             var reason = GetRepairFailReason(sessionIndex, breakdown);
@@ -37,32 +43,21 @@ namespace AutoMechanic.Gameplay
                 return false;
             }
 
-            if (InventoryManager.Instance == null)
-            {
-                Debug.LogError("[RepairManager] InventoryManager не найден!");
-                return false;
-            }
-
+            // Списываем детали
             foreach (var part in breakdown.requiredParts)
-            {
-                bool ok = InventoryManager.Instance.Remove(part.id, 1);
-                if (!ok)
-                {
-                    Debug.LogError($"[RepairManager] Гонка при списании {part.id}. Инвентарь мог измениться.");
-                    return false;
-                }
-            }
+                InventoryManager.Instance.Remove(part.id, 1);
 
-            if (EconomyManager.Instance != null && breakdown.repairReward > 0)
+            // Рефанд — возвращаем стоимость деталей
+            int refund = breakdown.GetPartsCost();
+            if (EconomyManager.Instance != null && refund > 0)
             {
-                EconomyManager.Instance.Add(breakdown.repairReward);
-                Debug.Log($"[RepairManager] +${breakdown.repairReward} за «{breakdown.displayName}»");
+                EconomyManager.Instance.Add(refund);
+                Debug.Log($"[RepairManager] Рефанд за «{breakdown.displayName}»: +${refund}");
             }
 
             if (DiagnosticManager.Instance != null)
                 DiagnosticManager.Instance.MarkFixed(sessionIndex, breakdown);
 
-            Debug.Log($"[RepairManager] Поломка «{breakdown.displayName}» устранена");
             return true;
         }
 
@@ -106,7 +101,6 @@ namespace AutoMechanic.Gameplay
 
         // ==================== ЗАВЕРШЕНИЕ ЗАКАЗА ====================
 
-        /// <summary>Сдать машину заказчику. Работает только если все поломки устранены.</summary>
         public bool TryCompleteOrder(int sessionIndex)
         {
             if (GarageManager.Instance == null || DiagnosticManager.Instance == null)
@@ -124,26 +118,74 @@ namespace AutoMechanic.Gameplay
 
             if (!DiagnosticManager.Instance.IsSessionComplete(sessionIndex))
             {
-                Debug.LogWarning("[RepairManager] Не все поломки устранены — заказ не готов");
+                Debug.LogWarning("[RepairManager] Не все поломки устранены");
                 return false;
             }
 
             var session = sessions[sessionIndex];
-            int reward = UnityEngine.Random.Range(minOrderReward, maxOrderReward + 1);
-            if (session.car.isBonus) reward *= bonusMultiplier;
+            int reward = CalculateOrderReward(session);
 
             if (EconomyManager.Instance != null)
                 EconomyManager.Instance.Add(reward);
 
             string bonusTag = session.car.isBonus ? " (бонус ⭐ ×2)" : "";
             Debug.Log($"[RepairManager] Заказ завершён: {session.car.displayName}, +${reward}{bonusTag}");
-            
-            // Отмечаем в коллекции
+
             if (CollectionManager.Instance != null)
                 CollectionManager.Instance.MarkRepaired(session.car);
 
             GarageManager.Instance.CompleteRepair(sessionIndex);
             return true;
+        }
+
+        /// <summary>
+        /// Награда за заказ = стоимость всех деталей × профит-ставка.
+        /// Профит-ставка = ставка машины + бонус за самую редкую поломку.
+        /// </summary>
+        private int CalculateOrderReward(RepairSession session)
+        {
+            if (session == null || session.car == null) return 0;
+
+            // Стоимость всех деталей по всем поломкам
+            int totalPartsCost = 0;
+            PartRarity maxBreakdownRarity = PartRarity.Common;
+
+            foreach (var bd in session.brokenDownList)
+            {
+                if (bd == null) continue;
+                totalPartsCost += bd.GetPartsCost();
+                var r = bd.GetRarity();
+                if (r > maxBreakdownRarity) maxBreakdownRarity = r;
+            }
+
+            // Если деталей не было (не должно случиться) — минимальная награда
+            if (totalPartsCost <= 0) return 50;
+
+            // Ставка машины
+            float machineRate = 0.25f;
+            int mIdx = (int)session.car.rarity;
+            if (machineProfitRates != null && mIdx >= 0 && mIdx < machineProfitRates.Length)
+                machineRate = machineProfitRates[mIdx];
+
+            // Бонус за редкость поломки
+            float rarityBonus = 0f;
+            int rIdx = (int)maxBreakdownRarity;
+            if (breakdownRarityBonus != null && rIdx >= 0 && rIdx < breakdownRarityBonus.Length)
+                rarityBonus = breakdownRarityBonus[rIdx];
+
+            // Итоговая ставка
+            float profitRate = machineRate + rarityBonus;
+            int reward = Mathf.RoundToInt(totalPartsCost * profitRate);
+
+            // Бонусная машина
+            if (session.car.isBonus) reward *= bonusMultiplier;
+
+            // Округляем до красивого числа
+            if (reward >= 10000) reward = Mathf.RoundToInt(reward / 1000f) * 1000;
+            else if (reward >= 1000) reward = Mathf.RoundToInt(reward / 100f) * 100;
+            else if (reward >= 100) reward = Mathf.RoundToInt(reward / 10f) * 10;
+
+            return reward;
         }
 
         // ==================== ТЕСТЫ ====================
@@ -160,27 +202,45 @@ namespace AutoMechanic.Gameplay
         [ContextMenu("ТЕСТ: завершить заказ 0")]
         private void TestComplete0() => TryCompleteOrder(0);
 
-        [ContextMenu("ТЕСТ: показать требования по сессии 0")]
-        private void TestShowRequirements0()
+        [ContextMenu("ТЕСТ: показать экономику сессии 0")]
+        private void TestShowEconomics0()
         {
-            var list = DiagnosticManager.Instance != null
-                ? DiagnosticManager.Instance.GetBreakdowns(0) : null;
-            if (list == null || list.Count == 0) { Debug.Log("[RepairManager] Сессия 0 пуста"); return; }
-
-            var sb = new System.Text.StringBuilder("[RepairManager] Требования по сессии 0:\n");
-            foreach (var bd in list)
+            if (GarageManager.Instance == null || GarageManager.Instance.Sessions.Count == 0)
             {
-                bool fixedAlready = DiagnosticManager.Instance.IsFixed(0, bd);
-                bool can = CanRepair(0, bd, out string reason);
-                sb.Append($"  {bd.displayName} | ${bd.repairReward} | ");
-                sb.AppendLine(fixedAlready ? "уже ✅" : (can ? "можно ✅" : $"нельзя ❌ ({reason})"));
-                if (bd.requiredParts != null)
-                    foreach (var p in bd.requiredParts)
-                    {
-                        int have = InventoryManager.Instance != null ? InventoryManager.Instance.GetCount(p.id) : 0;
-                        sb.AppendLine($"      • {p.displayName} (есть {have})");
-                    }
+                Debug.Log("[RepairManager] Сессия 0 пуста");
+                return;
             }
+
+            var session = GarageManager.Instance.Sessions[0];
+            int cost = 0;
+            PartRarity maxR = PartRarity.Common;
+
+            foreach (var bd in session.brokenDownList)
+            {
+                if (bd == null) continue;
+                int bdCost = bd.GetPartsCost();
+                cost += bdCost;
+                var r = bd.GetRarity();
+                if (r > maxR) maxR = r;
+            }
+
+            int mIdx = (int)session.car.rarity;
+            float mRate = (machineProfitRates != null && mIdx < machineProfitRates.Length)
+                ? machineProfitRates[mIdx] : 0.25f;
+            int rIdx = (int)maxR;
+            float rBonus = (breakdownRarityBonus != null && rIdx < breakdownRarityBonus.Length)
+                ? breakdownRarityBonus[rIdx] : 0f;
+
+            int reward = CalculateOrderReward(session);
+
+            var sb = new System.Text.StringBuilder("[RepairManager] Экономика сессии 0:\n");
+            sb.AppendLine($"  Машина: {session.car.displayName} [{session.car.rarity}]");
+            sb.AppendLine($"  Детали (всего): ${cost}");
+            sb.AppendLine($"  Макс. редкость поломки: {maxR}");
+            sb.AppendLine($"  Ставка машины: +{mRate * 100:F0}%");
+            sb.AppendLine($"  Бонус поломки: +{rBonus * 100:F0}%");
+            sb.AppendLine($"  Итоговый профит: +${reward}");
+            sb.AppendLine($"  Окупаемость: ×{(cost + reward) / (float)cost:F2}");
             Debug.Log(sb.ToString());
         }
     }
