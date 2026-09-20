@@ -23,7 +23,7 @@ namespace AutoMechanic.EditorTools
             ("part_bumper",       PartRarity.Uncommon),
             ("part_timing_belt",  PartRarity.Rare),
             ("part_clutch",       PartRarity.Rare),
-            ("part_alternator",   PartRarity.Rare),
+            ("part_generator",    PartRarity.Rare),
             ("part_rust_kit",     PartRarity.Rare),
             ("part_piston",       PartRarity.Epic),
             ("part_synchronizer", PartRarity.Epic),
