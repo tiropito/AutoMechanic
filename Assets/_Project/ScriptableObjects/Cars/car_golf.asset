@@ -20,9 +20,6 @@ MonoBehaviour:
   isBonus: 0
   sprite: {fileID: 0}
   possibleBreakdowns:
-  - {fileID: 11400000, guid: 5f0810a0aa5a3bb489ade8e705ddd668, type: 2}
-  - {fileID: 11400000, guid: 31e01e34edfbc0849a8090ed9d219d4f, type: 2}
   - {fileID: 11400000, guid: 702c96a8bbdd7da42a022155f8c9610e, type: 2}
+  - {fileID: 11400000, guid: 5f0810a0aa5a3bb489ade8e705ddd668, type: 2}
   - {fileID: 11400000, guid: d6c65b10e7f32ca4ea928be7be5ce9cb, type: 2}
-  - {fileID: 11400000, guid: 1ff330e3b5381e94dabad517bbab73fb, type: 2}
-  - {fileID: 11400000, guid: 0fe6e7b88c257444a9149dc7dd5c6a8b, type: 2}
