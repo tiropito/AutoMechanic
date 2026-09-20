@@ -11,15 +11,12 @@ namespace AutoMechanic.Data
         Body
     }
 
-    /// <summary>
-    /// Редкость детали. Влияет на цену, цвет в магазине и частоту поломок.
-    /// </summary>
     public enum PartRarity
     {
-        Common,     // Обычная — дешёвая, частая
-        Uncommon,   // Необычная
-        Rare,       // Редкая
-        Epic        // Эпическая — дорогая, редкая
+        Common,
+        Uncommon,
+        Rare,
+        Epic
     }
 
     [CreateAssetMenu(fileName = "NewPartData", menuName = "AutoMechanic/Part Data")]
@@ -33,11 +30,9 @@ namespace AutoMechanic.Data
         public PartCategory category;
 
         [Header("Редкость")]
-        [Tooltip("Влияет на цену, цвет и частоту поломок")]
         public PartRarity rarity = PartRarity.Common;
 
-        [Header("Экономика (заполняется по редкости)")]
-        [Tooltip("Заполняется автоматически кнопкой Tools → Автомеханик → Проставить цены по редкости")]
+        [Header("Экономика")]
         [Range(0, 10000)]
         public int buyPrice = 10;
 
@@ -49,7 +44,6 @@ namespace AutoMechanic.Data
 
         public int SellPrice => Mathf.RoundToInt(buyPrice * sellPercent / 100f);
 
-        /// <summary>Цвет редкости для UI.</summary>
         public Color RarityColor
         {
             get
@@ -80,7 +74,6 @@ namespace AutoMechanic.Data
             }
         }
 
-        /// <summary>Диапазон цены для редкости (min, max) — включительно.</summary>
         public static (int min, int max) GetPriceRange(PartRarity rarity)
         {
             switch (rarity)
@@ -93,26 +86,18 @@ namespace AutoMechanic.Data
             }
         }
 
-        /// <summary>
-        /// Детерминированная цена по id и редкости.
-        /// Одна и та же деталь всегда стоит одно и то же.
-        /// </summary>
         public static int ComputePrice(string id, PartRarity rarity)
         {
             var (min, max) = GetPriceRange(rarity);
-
-            // Хэш от id — стабильный, но разный для разных деталей
             int hash = string.IsNullOrEmpty(id) ? 0 : id.GetHashCode();
-            // Берём модуль, чтобы диапазон рандома был в пределах
             int seed = Mathf.Abs(hash) % 10000;
             var rng = new System.Random(seed);
 
             int price = rng.Next(min, max + 1);
 
-            // Округляем до "красивого" числа
-            if (price >= 1000) price = Mathf.RoundToInt(price / 100f) * 100;   // 2500, 3200
-            else if (price >= 100) price = Mathf.RoundToInt(price / 10f) * 10; // 120, 180
-            else price = Mathf.RoundToInt(price / 5f) * 5;                     // 15, 25
+            if (price >= 1000) price = Mathf.RoundToInt(price / 100f) * 100;
+            else if (price >= 100) price = Mathf.RoundToInt(price / 10f) * 10;
+            else price = Mathf.RoundToInt(price / 5f) * 5;
 
             return Mathf.Clamp(price, min, max);
         }

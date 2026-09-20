@@ -13,7 +13,7 @@ namespace AutoMechanic.Gameplay
     {
         public static CollectionManager Instance { get; private set; }
 
-        private const string KeyPrefix = "am_repaired_";   // am_repaired_car_golf = 1
+        private const string KeyPrefix = "am_repaired_";
         private const string KeyCount = "am_repaired_count";
 
         [Header("Ссылки")]
@@ -22,10 +22,8 @@ namespace AutoMechanic.Gameplay
 
         private readonly HashSet<string> _repairedIds = new HashSet<string>();
 
-        /// <summary>Сколько уникальных машин отремонтировано.</summary>
         public int RepairedCount => _repairedIds.Count;
 
-        /// <summary>Изменение коллекции (отремонтировали новую машину).</summary>
         public event Action OnCollectionChanged;
 
         private void Awake()
@@ -36,9 +34,6 @@ namespace AutoMechanic.Gameplay
             Load();
         }
 
-        // ==================== ПУБЛИЧНОЕ API ====================
-
-        /// <summary>Отремонтирована ли конкретная машина (уникально).</summary>
         public bool IsRepaired(string carId)
         {
             return !string.IsNullOrEmpty(carId) && _repairedIds.Contains(carId);
@@ -46,7 +41,6 @@ namespace AutoMechanic.Gameplay
 
         public bool IsRepaired(CarData car) => car != null && IsRepaired(car.id);
 
-        /// <summary>Отметить машину как отремонтированную (вызывается при завершении заказа).</summary>
         public void MarkRepaired(CarData car)
         {
             if (car == null || string.IsNullOrEmpty(car.id)) return;
@@ -57,13 +51,10 @@ namespace AutoMechanic.Gameplay
 
             Debug.Log($"[CollectionManager] Новая машина отремонтирована: {car.displayName}. Всего: {RepairedCount}");
 
-            // Проверяем, не открылся ли новый тир
             CheckUnlocks();
-
             OnCollectionChanged?.Invoke();
         }
 
-        /// <summary>Доступна ли машина для спавна (по прогрессу).</summary>
         public bool IsUnlocked(CarData car)
         {
             if (car == null) return false;
@@ -71,14 +62,12 @@ namespace AutoMechanic.Gameplay
             return RepairedCount >= required;
         }
 
-        /// <summary>Сколько машин ещё нужно отремонтировать до открытия следующего тира.</summary>
         public int HowManyLeftToUnlock(CarRarity rarity)
         {
             int required = CarData.GetRequiredProgress(rarity);
             return Mathf.Max(0, required - RepairedCount);
         }
 
-        /// <summary>Список открытых сейчас машин (только доступные по прогрессу).</summary>
         public List<CarData> GetUnlockedCars()
         {
             var result = new List<CarData>();
@@ -92,7 +81,6 @@ namespace AutoMechanic.Gameplay
             return result;
         }
 
-        /// <summary>Сброс коллекции (для отладки).</summary>
         [ContextMenu("Сбросить коллекцию")]
         public void ResetCollection()
         {
@@ -107,8 +95,6 @@ namespace AutoMechanic.Gameplay
             OnCollectionChanged?.Invoke();
         }
 
-        // ==================== ВНУТРЕННЕЕ ====================
-
         private void CheckUnlocks()
         {
             if (carDatabase == null || carDatabase.allCars == null) return;
@@ -117,11 +103,8 @@ namespace AutoMechanic.Gameplay
             {
                 if (car == null) continue;
                 int required = CarData.GetRequiredProgress(car.rarity);
-                // Если только что открылась (RepairedCount == required)
                 if (RepairedCount == required && required > 0)
-                {
                     Debug.Log($"[CollectionManager] 🔓 Открыта новая машина: {car.displayName} ({car.rarity})");
-                }
             }
         }
 
@@ -149,8 +132,6 @@ namespace AutoMechanic.Gameplay
             Debug.Log($"[CollectionManager] Загружено отремонтированных: {_repairedIds.Count}");
         }
 
-        // ==================== ТЕСТЫ ====================
-
         [ContextMenu("ТЕСТ: показать коллекцию")]
         private void TestDump()
         {
@@ -177,11 +158,7 @@ namespace AutoMechanic.Gameplay
             foreach (var car in carDatabase.allCars)
             {
                 if (car == null) continue;
-                if (!IsRepaired(car))
-                {
-                    MarkRepaired(car);
-                    return;
-                }
+                if (!IsRepaired(car)) { MarkRepaired(car); return; }
             }
         }
     }

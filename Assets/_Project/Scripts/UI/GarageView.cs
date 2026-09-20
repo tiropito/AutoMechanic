@@ -6,7 +6,7 @@ namespace AutoMechanic.UI
 {
     /// <summary>
     /// Показывает спрайт активной машины в центре экрана.
-    /// Скрывается, когда открыты модальные панели (магазин, апгрейды).
+    /// Скрывается, когда открыты модальные панели.
     /// </summary>
     public class GarageView : MonoBehaviour
     {
@@ -55,7 +55,6 @@ namespace AutoMechanic.UI
 
         private void OnSessionSwitched(int _) => Refresh();
 
-        /// <summary>Скрываем/показываем машину при открытии модальных панелей.</summary>
         private void OnPanelToggled(bool isOpen)
         {
             if (carSprite != null) carSprite.enabled = !isOpen;
@@ -72,6 +71,7 @@ namespace AutoMechanic.UI
             if (sessions.Count == 0)
             {
                 carSprite.enabled = false;
+                carSprite.color = new Color(1, 1, 1, 0);
                 if (carNameText != null) carNameText.text = "";
                 return;
             }
@@ -82,12 +82,16 @@ namespace AutoMechanic.UI
             if (session == null || session.car == null)
             {
                 carSprite.enabled = false;
+                carSprite.color = new Color(1, 1, 1, 0);
                 return;
             }
 
             bool hasSprite = session.car.sprite != null;
             carSprite.sprite = hasSprite ? session.car.sprite : null;
             carSprite.enabled = hasSprite;
+
+            // ВАЖНО: убираем белый фон Image, если спрайта нет
+            carSprite.color = hasSprite ? Color.white : new Color(1, 1, 1, 0);
 
             if (carNameText != null)
                 carNameText.text = session.car.displayName;

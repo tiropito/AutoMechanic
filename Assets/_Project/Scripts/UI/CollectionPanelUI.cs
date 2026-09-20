@@ -7,9 +7,7 @@ using AutoMechanic.Gameplay;
 
 namespace AutoMechanic.UI
 {
-    /// <summary>
-    /// Панель коллекции: сетка всех машин с прогрессом.
-    /// </summary>
+    /// <summary>Панель коллекции: сетка всех машин с прогрессом.</summary>
     public class CollectionPanelUI : MonoBehaviour
     {
         public static event System.Action<bool> OnCollectionToggled;
@@ -31,7 +29,6 @@ namespace AutoMechanic.UI
         {
             if (closeButton != null) closeButton.onClick.AddListener(Close);
             if (rootPanel != null) rootPanel.SetActive(false);
-
             Subscribe();
         }
 

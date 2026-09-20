@@ -4,10 +4,6 @@ using UnityEngine.UI;
 
 namespace AutoMechanic.UI
 {
-    /// <summary>
-    /// Увеличивает чувствительность колёсика мыши для ScrollRect.
-    /// Нужно для WebGL, где штатный скролл работает туго.
-    /// </summary>
     [RequireComponent(typeof(ScrollRect))]
     public class ScrollWheelBooster : MonoBehaviour, IScrollHandler
     {
@@ -25,7 +21,6 @@ namespace AutoMechanic.UI
         {
             if (_scrollRect == null) return;
 
-            // Применяем множитель к прокрутке
             var delta = eventData.scrollDelta;
             delta.y *= wheelMultiplier;
             eventData.scrollDelta = delta;

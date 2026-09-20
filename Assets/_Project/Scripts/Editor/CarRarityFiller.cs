@@ -5,33 +5,20 @@ using AutoMechanic.Data;
 
 namespace AutoMechanic.EditorTools
 {
-    /// <summary>
-    /// Проставляет редкость всем CarData.
-    /// Запуск: Tools → Автомеханик → Расставить редкости машин.
-    /// </summary>
     public static class CarRarityFiller
     {
         private static readonly (string id, CarRarity rarity)[] Data = new (string, CarRarity)[]
         {
-            // ===== BASIC (3) — сразу =====
             ("car_hatch_2114", CarRarity.Basic),
             ("car_sedan_el",   CarRarity.Basic),
             ("car_golf",       CarRarity.Basic),
-
-            // ===== MEDIUM (3) — 2 отремонтировано =====
             ("car_van",        CarRarity.Medium),
             ("car_crossover",  CarRarity.Medium),
             ("car_compact",    CarRarity.Medium),
-
-            // ===== PREMIUM (2) — 5 отремонтировано =====
             ("car_executive",  CarRarity.Premium),
             ("car_bavaria",    CarRarity.Premium),
-
-            // ===== LUXURY (2) — 8 отремонтировано =====
             ("car_luxury",     CarRarity.Luxury),
             ("car_sport_911",  CarRarity.Luxury),
-
-            // ===== SECRET (1) — 10 отремонтировано =====
             ("car_secret_pickup", CarRarity.Secret),
         };
 
@@ -58,7 +45,6 @@ namespace AutoMechanic.EditorTools
                 foreach (var (id, rarity) in Data)
                 {
                     if (id != car.id) continue;
-
                     car.rarity = rarity;
                     EditorUtility.SetDirty(car);
                     sb.AppendLine($"  {car.displayName,-18} | {rarity,-8} | нужно: {CarData.GetRequiredProgress(rarity)}");

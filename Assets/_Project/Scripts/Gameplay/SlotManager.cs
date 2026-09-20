@@ -5,7 +5,6 @@ using AutoMechanic.Data;
 
 namespace AutoMechanic.Gameplay
 {
-    /// <summary>Один слот заказа.</summary>
     [Serializable]
     public class SlotData
     {
@@ -17,17 +16,12 @@ namespace AutoMechanic.Gameplay
         public float bonusTimeLeft;
     }
 
-    /// <summary>
-    /// Управляет слотами заказов. 3 старт, максимум 6.
-    /// Сохраняет состояние в PlayerPrefs.
-    /// </summary>
     public class SlotManager : MonoBehaviour
     {
         public static SlotManager Instance { get; private set; }
 
         private const string KeySlotCount = "am_slot_count";
         private const string KeySlotPrefix = "am_slot_";
-        private const string KeyUpgradeSlots = "am_upg_slots"; // из UpgradeManager, для восстановления количества
 
         [Header("Ссылки")]
         [SerializeField] private CarDatabase carDatabase;
@@ -48,6 +42,8 @@ namespace AutoMechanic.Gameplay
 
         public event Action OnSlotsChanged;
 
+        private int _lastSaveFrame = -1;
+
         private void Awake()
         {
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
@@ -63,15 +59,8 @@ namespace AutoMechanic.Gameplay
             Load();
         }
 
-        private void OnApplicationQuit()
-        {
-            Save();
-        }
-
-        private void OnApplicationPause(bool pause)
-        {
-            if (pause) Save();
-        }
+        private void OnApplicationQuit() { Save(); }
+        private void OnApplicationPause(bool pause) { if (pause) Save(); }
 
         private void Update()
         {
@@ -98,8 +87,6 @@ namespace AutoMechanic.Gameplay
             }
         }
 
-        // ==================== ЗАПОЛНЕНИЕ ====================
-
         private void FillSlot(int index)
         {
             var car = PickRandomCar();
@@ -118,16 +105,12 @@ namespace AutoMechanic.Gameplay
             if (carDatabase == null || carDatabase.allCars == null || carDatabase.allCars.Length == 0)
                 return null;
 
-            // Собираем только ОТКРЫТЫЕ машины
             var pool = new List<CarData>();
             foreach (var car in carDatabase.allCars)
             {
                 if (car == null) continue;
-
-                // Если CollectionManager есть — учитываем прогресс
                 if (CollectionManager.Instance != null && !CollectionManager.Instance.IsUnlocked(car))
                     continue;
-
                 pool.Add(car);
             }
 
@@ -147,8 +130,6 @@ namespace AutoMechanic.Gameplay
             OnSlotsChanged?.Invoke();
             Save();
         }
-
-        // ==================== ПУБЛИЧНОЕ API ====================
 
         public CarData TakeCar(int slotIndex)
         {
@@ -182,6 +163,9 @@ namespace AutoMechanic.Gameplay
 
         public void Save()
         {
+            if (_lastSaveFrame == Time.frameCount) return;
+            _lastSaveFrame = Time.frameCount;
+
             PlayerPrefs.SetInt(KeySlotCount, slots.Count);
 
             for (int i = 0; i < slots.Count; i++)
@@ -197,7 +181,6 @@ namespace AutoMechanic.Gameplay
             }
 
             PlayerPrefs.Save();
-            Debug.Log($"[SlotManager] Сохранено слотов: {slots.Count}");
         }
 
         public void Load()
@@ -208,14 +191,12 @@ namespace AutoMechanic.Gameplay
 
             if (count <= 0)
             {
-                // Первый запуск — стандартный старт
                 while (slots.Count < startSlots) slots.Add(new SlotData());
                 for (int i = 0; i < slots.Count; i++) FillSlot(i);
                 Save();
                 return;
             }
 
-            // Пробуем восстановить слоты
             for (int i = 0; i < count; i++)
             {
                 string p = KeySlotPrefix + i + "_";
@@ -231,8 +212,6 @@ namespace AutoMechanic.Gameplay
                 if (!string.IsNullOrEmpty(carId))
                     data.currentCar = FindCarById(carId);
 
-                // Если машины не нашли — слот пустой, попробуем позже заполнить
-                // Если бонусная, но осталось меньше 5 сек — просто выкинем её
                 if (data.currentCar != null && data.isBonus && data.bonusTimeLeft < 5f)
                 {
                     data.currentCar = null;
@@ -243,7 +222,6 @@ namespace AutoMechanic.Gameplay
                 slots.Add(data);
             }
 
-            // Дозаполняем пустые слоты
             for (int i = 0; i < slots.Count; i++)
                 if (slots[i].currentCar == null && !slots[i].isInRepair)
                     FillSlot(i);
@@ -278,7 +256,6 @@ namespace AutoMechanic.Gameplay
             Debug.Log("[SlotManager] Сохранение слотов сброшено. Перезапусти Play");
         }
 
-        // ===== ТЕСТЫ =====
         [ContextMenu("ТЕСТ: показать слоты")]
         private void TestDump()
         {

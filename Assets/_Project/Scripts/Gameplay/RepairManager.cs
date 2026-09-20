@@ -43,11 +43,9 @@ namespace AutoMechanic.Gameplay
                 return false;
             }
 
-            // Списываем детали
             foreach (var part in breakdown.requiredParts)
                 InventoryManager.Instance.Remove(part.id, 1);
 
-            // Рефанд — возвращаем стоимость деталей
             int refund = breakdown.GetPartsCost();
             if (EconomyManager.Instance != null && refund > 0)
             {
@@ -138,15 +136,10 @@ namespace AutoMechanic.Gameplay
             return true;
         }
 
-        /// <summary>
-        /// Награда за заказ = стоимость всех деталей × профит-ставка.
-        /// Профит-ставка = ставка машины + бонус за самую редкую поломку.
-        /// </summary>
         private int CalculateOrderReward(RepairSession session)
         {
             if (session == null || session.car == null) return 0;
 
-            // Стоимость всех деталей по всем поломкам
             int totalPartsCost = 0;
             PartRarity maxBreakdownRarity = PartRarity.Common;
 
@@ -158,29 +151,23 @@ namespace AutoMechanic.Gameplay
                 if (r > maxBreakdownRarity) maxBreakdownRarity = r;
             }
 
-            // Если деталей не было (не должно случиться) — минимальная награда
             if (totalPartsCost <= 0) return 50;
 
-            // Ставка машины
             float machineRate = 0.25f;
             int mIdx = (int)session.car.rarity;
             if (machineProfitRates != null && mIdx >= 0 && mIdx < machineProfitRates.Length)
                 machineRate = machineProfitRates[mIdx];
 
-            // Бонус за редкость поломки
             float rarityBonus = 0f;
             int rIdx = (int)maxBreakdownRarity;
             if (breakdownRarityBonus != null && rIdx >= 0 && rIdx < breakdownRarityBonus.Length)
                 rarityBonus = breakdownRarityBonus[rIdx];
 
-            // Итоговая ставка
             float profitRate = machineRate + rarityBonus;
             int reward = Mathf.RoundToInt(totalPartsCost * profitRate);
 
-            // Бонусная машина
             if (session.car.isBonus) reward *= bonusMultiplier;
 
-            // Округляем до красивого числа
             if (reward >= 10000) reward = Mathf.RoundToInt(reward / 1000f) * 1000;
             else if (reward >= 1000) reward = Mathf.RoundToInt(reward / 100f) * 100;
             else if (reward >= 100) reward = Mathf.RoundToInt(reward / 10f) * 10;
@@ -240,7 +227,7 @@ namespace AutoMechanic.Gameplay
             sb.AppendLine($"  Ставка машины: +{mRate * 100:F0}%");
             sb.AppendLine($"  Бонус поломки: +{rBonus * 100:F0}%");
             sb.AppendLine($"  Итоговый профит: +${reward}");
-            sb.AppendLine($"  Окупаемость: ×{(cost + reward) / (float)cost:F2}");
+            if (cost > 0) sb.AppendLine($"  Окупаемость: ×{(cost + reward) / (float)cost:F2}");
             Debug.Log(sb.ToString());
         }
     }

@@ -12,16 +12,13 @@ namespace AutoMechanic.Data
         Sport
     }
 
-    /// <summary>
-    /// Редкость машины. Влияет на то, когда она открывается.
-    /// </summary>
     public enum CarRarity
     {
-        Basic,      // Открыта сразу
-        Medium,     // 2 уникальные машины отремонтированы
-        Premium,    // 5 уникальных
-        Luxury,     // 8 уникальных
-        Secret      // 10 уникальных (все)
+        Basic,
+        Medium,
+        Premium,
+        Luxury,
+        Secret
     }
 
     [CreateAssetMenu(fileName = "NewCarData", menuName = "AutoMechanic/Car Data")]
@@ -34,7 +31,6 @@ namespace AutoMechanic.Data
         public CarType type;
 
         [Header("Редкость")]
-        [Tooltip("Определяет, с какого прогресса машина открывается")]
         public CarRarity rarity = CarRarity.Basic;
 
         [Header("Особенности")]
@@ -46,7 +42,6 @@ namespace AutoMechanic.Data
         [Header("Поломки")]
         public BreakdownData[] possibleBreakdowns;
 
-        /// <summary>Цвет редкости для UI.</summary>
         public Color RarityColor
         {
             get
@@ -79,7 +74,6 @@ namespace AutoMechanic.Data
             }
         }
 
-        /// <summary>Сколько уникальных машин нужно отремонтировать для открытия этого тира.</summary>
         public static int GetRequiredProgress(CarRarity rarity)
         {
             switch (rarity)

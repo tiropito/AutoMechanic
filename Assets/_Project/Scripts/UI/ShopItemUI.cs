@@ -8,9 +8,6 @@ using AutoMechanic.Gameplay;
 
 namespace AutoMechanic.UI
 {
-    /// <summary>
-    /// Одна строка магазина: иконка, имя, описание, цена, «Продать», «Купить».
-    /// </summary>
     public class ShopItemUI : MonoBehaviour
     {
         [Header("Ссылки")]
@@ -43,15 +40,15 @@ namespace AutoMechanic.UI
             _onSell = onSell;
 
             if (iconImage != null) iconImage.sprite = part.icon;
+
             if (nameText != null)
             {
                 nameText.text = part.displayName;
-                nameText.color = part.RarityColor;   // ← цвет по редкости
+                nameText.color = part.RarityColor;
             }
+
             if (descriptionText != null)
-                descriptionText.text = string.IsNullOrEmpty(part.description)
-                    ? "—"
-                    : part.description;
+                descriptionText.text = string.IsNullOrEmpty(part.description) ? "—" : part.description;
 
             int buyPrice = ShopManager.Instance != null ? ShopManager.Instance.GetBuyPrice(part) : 0;
             if (priceText != null) priceText.text = $"${buyPrice}";
@@ -74,21 +71,10 @@ namespace AutoMechanic.UI
 
         public void RefreshVisual(int haveCount, bool canAfford)
         {
-            if (countText != null)
-                countText.text = haveCount > 0 ? $"×{haveCount}" : "";
-
-            if (background != null)
-                background.color = canAfford ? normalColor : cantAffordColor;
-
-            if (buyButton != null)
-                buyButton.interactable = canAfford;
-
-            if (sellButton != null)
-                sellButton.interactable = haveCount > 0;
-
-            // Цвет имени по редкости
-            if (nameText != null && _part != null)
-                nameText.color = _part.RarityColor;
+            if (countText != null) countText.text = haveCount > 0 ? $"×{haveCount}" : "";
+            if (background != null) background.color = canAfford ? normalColor : cantAffordColor;
+            if (buyButton != null) buyButton.interactable = canAfford;
+            if (sellButton != null) sellButton.interactable = haveCount > 0;
         }
     }
 }

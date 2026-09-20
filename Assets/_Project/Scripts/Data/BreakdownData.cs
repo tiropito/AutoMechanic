@@ -22,7 +22,7 @@ namespace AutoMechanic.Data
         [Header("Ремонт")]
         public PartData[] requiredParts;
 
-        [Tooltip("Сколько денег дают за устранение этой поломки")]
+        [Tooltip("Сколько денег дают за устранение этой поломки (fallback, если нет авто-расчёта)")]
         [Range(0, 20000)]
         public int repairReward = 20;
 
