@@ -43,8 +43,11 @@ namespace AutoMechanic.UI
             _onSell = onSell;
 
             if (iconImage != null) iconImage.sprite = part.icon;
-            if (nameText != null) nameText.text = part.displayName;
-
+            if (nameText != null)
+            {
+                nameText.text = part.displayName;
+                nameText.color = part.RarityColor;   // ← цвет по редкости
+            }
             if (descriptionText != null)
                 descriptionText.text = string.IsNullOrEmpty(part.description)
                     ? "—"
@@ -82,6 +85,10 @@ namespace AutoMechanic.UI
 
             if (sellButton != null)
                 sellButton.interactable = haveCount > 0;
+
+            // Цвет имени по редкости
+            if (nameText != null && _part != null)
+                nameText.color = _part.RarityColor;
         }
     }
 }

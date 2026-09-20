@@ -18,6 +18,7 @@ MonoBehaviour:
     \u0442\u043E\u043B\u043A\u0430\u0435\u0442 \u043A\u043E\u043B\u0435\u043D\u0432\u0430\u043B.
     \u0421\u0435\u0440\u0434\u0446\u0435 \u0434\u0432\u0438\u0433\u0430\u0442\u0435\u043B\u044F."
   category: 0
-  buyPrice: 25
+  rarity: 3
+  buyPrice: 4200
   sellPercent: 60
   icon: {fileID: 0}
