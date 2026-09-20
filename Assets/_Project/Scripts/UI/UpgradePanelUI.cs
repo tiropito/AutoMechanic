@@ -12,7 +12,6 @@ namespace AutoMechanic.UI
         public static event Action<bool> OnUpgradeToggled;
 
         [SerializeField] private GameObject rootPanel;
-        [SerializeField] private TMP_Text moneyText;
 
         [Header("Карточки")]
         [SerializeField] private UpgradeCardUI slotCard;
@@ -108,7 +107,6 @@ namespace AutoMechanic.UI
             if (UpgradeManager.Instance == null) return;
 
             int money = EconomyManager.Instance != null ? EconomyManager.Instance.Money : 0;
-            if (moneyText != null) moneyText.text = $"${money}";
 
             var um = UpgradeManager.Instance;
 

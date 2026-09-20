@@ -6,8 +6,8 @@ using AutoMechanic.Data;
 namespace AutoMechanic.Gameplay
 {
     /// <summary>
-    /// Ремонт: ставит детали с таймером установки, начисляет рефанд, завершает заказ.
-    /// Плюс продажа недоремонтированной машины.
+    /// Ремонт: ставит детали с таймером, завершает заказ, продаёт недоремонтированную машину.
+    /// Деньги приходят ТОЛЬКО при завершении заказа или продаже как есть.
     /// </summary>
     public class RepairManager : MonoBehaviour
     {
@@ -87,6 +87,7 @@ namespace AutoMechanic.Gameplay
 
         // ==================== ПОЧИНКА / УСТАНОВКА ====================
 
+        /// <summary>Ставит деталь. Деньги НЕ начисляются — только списываются из инвентаря.</summary>
         public bool TryRepair(int sessionIndex, BreakdownData breakdown)
         {
             var reason = GetRepairFailReason(sessionIndex, breakdown);
@@ -98,13 +99,6 @@ namespace AutoMechanic.Gameplay
 
             foreach (var part in breakdown.requiredParts)
                 InventoryManager.Instance.Remove(part.id, 1);
-
-            int refund = breakdown.GetPartsCost();
-            if (EconomyManager.Instance != null && refund > 0)
-            {
-                EconomyManager.Instance.Add(refund);
-                Debug.Log($"[RepairManager] Рефанд за «{breakdown.displayName}»: +${refund}");
-            }
 
             var session = GarageManager.Instance.Sessions[sessionIndex];
             if (session.installingList == null) session.installingList = new List<BreakdownTimer>();
@@ -252,6 +246,7 @@ namespace AutoMechanic.Gameplay
                 return false;
             }
 
+            // ЕДИНСТВЕННЫЙ источник дохода — здесь
             int reward = CalculateOrderReward(session);
 
             if (EconomyManager.Instance != null)
@@ -307,17 +302,26 @@ namespace AutoMechanic.Gameplay
 
             var session = sessions[sessionIndex];
 
+            // Считаем сколько деталей установлено (починено + в процессе установки)
             int fixedCount = session.fixedList != null ? session.fixedList.Count : 0;
-            bool hasInstalling = session.installingList != null && session.installingList.Count > 0;
-            if (fixedCount == 0 && !hasInstalling)
+            int installingCount = session.installingList != null ? session.installingList.Count : 0;
+
+            if (fixedCount == 0 && installingCount == 0)
                 return -sellAsIsNoRepairFee;
 
-            int fixedPartsCost = 0;
+            // Стоимость установленных деталей
+            int partsCost = 0;
             if (session.fixedList != null)
                 foreach (var bd in session.fixedList)
-                    if (bd != null) fixedPartsCost += bd.GetPartsCost();
+                    if (bd != null) partsCost += bd.GetPartsCost();
 
-            int price = Mathf.RoundToInt(fixedPartsCost * sellAsIsRate);
+            // Стоимость устанавливающихся
+            if (session.installingList != null)
+                foreach (var timer in session.installingList)
+                    if (timer != null && timer.breakdown != null)
+                        partsCost += timer.breakdown.GetPartsCost();
+
+            int price = Mathf.RoundToInt(partsCost * sellAsIsRate);
 
             if (price >= 1000) price = Mathf.RoundToInt(price / 100f) * 100;
             else if (price >= 100) price = Mathf.RoundToInt(price / 10f) * 10;

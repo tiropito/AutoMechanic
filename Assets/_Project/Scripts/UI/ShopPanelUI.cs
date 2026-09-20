@@ -14,7 +14,6 @@ namespace AutoMechanic.UI
         public static event Action<bool> OnShopToggled;
 
         [SerializeField] private GameObject rootPanel;
-        [SerializeField] private TMP_Text moneyText;
         [SerializeField] private Transform itemsContainer;
         [SerializeField] private ShopItemUI itemPrefab;
         [SerializeField] private Button closeButton;
@@ -102,8 +101,6 @@ namespace AutoMechanic.UI
 
         public void RefreshAll()
         {
-            if (moneyText != null && ShopManager.Instance != null)
-                moneyText.text = $"${ShopManager.Instance.GetCurrentMoney()}";
 
             foreach (var it in _items)
             {
