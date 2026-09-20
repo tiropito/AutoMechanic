@@ -137,6 +137,10 @@ namespace AutoMechanic.Gameplay
 
             string bonusTag = session.car.isBonus ? " (бонус ⭐ ×2)" : "";
             Debug.Log($"[RepairManager] Заказ завершён: {session.car.displayName}, +${reward}{bonusTag}");
+            
+            // Отмечаем в коллекции
+            if (CollectionManager.Instance != null)
+                CollectionManager.Instance.MarkRepaired(session.car);
 
             GarageManager.Instance.CompleteRepair(sessionIndex);
             return true;

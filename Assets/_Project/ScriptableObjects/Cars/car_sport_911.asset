@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: Sport 911
   prototype: Porsche 911 Classic
   type: 5
+  rarity: 3
   isBonus: 1
   sprite: {fileID: -5484828873933490359, guid: 640f44c7c557a5d459d425c26bf2184c, type: 3}
   possibleBreakdowns:

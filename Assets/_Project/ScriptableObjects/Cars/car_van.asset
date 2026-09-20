@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: Van LT
   prototype: Citroen SpaceTourer
   type: 1
+  rarity: 1
   isBonus: 0
   sprite: {fileID: 0}
   possibleBreakdowns:

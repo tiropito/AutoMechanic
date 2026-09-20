@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: Luxury Limo
   prototype: Maybach
   type: 4
+  rarity: 3
   isBonus: 1
   sprite: {fileID: 0}
   possibleBreakdowns:

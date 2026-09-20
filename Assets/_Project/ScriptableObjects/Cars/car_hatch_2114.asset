@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: Hatch 2114
   prototype: "\u0412\u0410\u0417 2114"
   type: 0
+  rarity: 0
   isBonus: 0
   sprite: {fileID: 0}
   possibleBreakdowns:

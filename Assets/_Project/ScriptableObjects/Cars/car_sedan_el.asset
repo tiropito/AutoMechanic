@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: Sedan EL
   prototype: Hyundai Elantra
   type: 3
+  rarity: 0
   isBonus: 0
   sprite: {fileID: 0}
   possibleBreakdowns:

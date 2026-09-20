@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: Compact C
   prototype: Mercedes C-Class
   type: 3
+  rarity: 1
   isBonus: 0
   sprite: {fileID: 0}
   possibleBreakdowns:

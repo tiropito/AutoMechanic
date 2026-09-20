@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: Bavaria E30
   prototype: BMW E30
   type: 3
+  rarity: 2
   isBonus: 0
   sprite: {fileID: 8976363471976419977, guid: 4d469a8251f2b744eb852c6549022c05, type: 3}
   possibleBreakdowns:

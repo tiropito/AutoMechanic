@@ -117,8 +117,22 @@ namespace AutoMechanic.Gameplay
         {
             if (carDatabase == null || carDatabase.allCars == null || carDatabase.allCars.Length == 0)
                 return null;
-            var pool = carDatabase.allCars;
-            return pool[UnityEngine.Random.Range(0, pool.Length)];
+
+            // Собираем только ОТКРЫТЫЕ машины
+            var pool = new List<CarData>();
+            foreach (var car in carDatabase.allCars)
+            {
+                if (car == null) continue;
+
+                // Если CollectionManager есть — учитываем прогресс
+                if (CollectionManager.Instance != null && !CollectionManager.Instance.IsUnlocked(car))
+                    continue;
+
+                pool.Add(car);
+            }
+
+            if (pool.Count == 0) return null;
+            return pool[UnityEngine.Random.Range(0, pool.Count)];
         }
 
         private void MakeEmpty(int index)
