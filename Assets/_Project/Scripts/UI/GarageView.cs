@@ -17,12 +17,14 @@ namespace AutoMechanic.UI
         {
             ShopPanelUI.OnShopToggled += OnPanelToggled;
             UpgradePanelUI.OnUpgradeToggled += OnPanelToggled;
+            CollectionPanelUI.OnCollectionToggled += OnPanelToggled;
         }
 
         private void OnDisable()
         {
             ShopPanelUI.OnShopToggled -= OnPanelToggled;
             UpgradePanelUI.OnUpgradeToggled -= OnPanelToggled;
+            CollectionPanelUI.OnCollectionToggled -= OnPanelToggled;
         }
 
         private void Start()
