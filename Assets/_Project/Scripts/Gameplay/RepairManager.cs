@@ -302,24 +302,17 @@ namespace AutoMechanic.Gameplay
 
             var session = sessions[sessionIndex];
 
-            // Считаем сколько деталей установлено (починено + в процессе установки)
+            // Считаем ТОЛЬКО завершённые установки.
+            // Если таймер ещё тикает — как будто деталь не поставлена.
             int fixedCount = session.fixedList != null ? session.fixedList.Count : 0;
-            int installingCount = session.installingList != null ? session.installingList.Count : 0;
 
-            if (fixedCount == 0 && installingCount == 0)
+            if (fixedCount == 0)
                 return -sellAsIsNoRepairFee;
 
-            // Стоимость установленных деталей
             int partsCost = 0;
             if (session.fixedList != null)
                 foreach (var bd in session.fixedList)
                     if (bd != null) partsCost += bd.GetPartsCost();
-
-            // Стоимость устанавливающихся
-            if (session.installingList != null)
-                foreach (var timer in session.installingList)
-                    if (timer != null && timer.breakdown != null)
-                        partsCost += timer.breakdown.GetPartsCost();
 
             int price = Mathf.RoundToInt(partsCost * sellAsIsRate);
 
