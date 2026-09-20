@@ -7,19 +7,18 @@ using AutoMechanic.Gameplay;
 
 namespace AutoMechanic.UI
 {
-    /// <summary>
-    /// Панель апгрейдов. Открывается кнопкой «Апгрейды».
-    /// </summary>
     public class UpgradePanelUI : MonoBehaviour
     {
-        /// <summary>Событие: открыта ли панель апгрейдов (true = открыта).</summary>
         public static event Action<bool> OnUpgradeToggled;
 
-        [Header("Ссылки")]
         [SerializeField] private GameObject rootPanel;
         [SerializeField] private TMP_Text moneyText;
+
+        [Header("Карточки")]
         [SerializeField] private UpgradeCardUI slotCard;
-        [SerializeField] private UpgradeCardUI doubleCard;
+        [SerializeField] private UpgradeCardUI garage2Card;   // пост №2
+        [SerializeField] private UpgradeCardUI garage3Card;   // пост №3
+
         [SerializeField] private Button closeButton;
 
         private void Start()
@@ -28,9 +27,13 @@ namespace AutoMechanic.UI
             if (rootPanel != null) rootPanel.SetActive(false);
 
             if (slotCard != null)
-                slotCard.Bind("+1 слот заказа", "Больше машин одновременно на выбор", OnBuySlot);
-            if (doubleCard != null)
-                doubleCard.Bind("Двойной ремонт", "Возможность ремонтировать 2 машины сразу", OnBuyDouble);
+                slotCard.Bind("+1 слот заказа", "Больше машин на выбор одновременно", OnBuySlot);
+
+            if (garage2Card != null)
+                garage2Card.Bind("Второй пост ремонта", "Ремонтируй 2 машины одновременно", OnBuyGarage2);
+
+            if (garage3Card != null)
+                garage3Card.Bind("Третий пост ремонта", "Ремонтируй 3 машины одновременно", OnBuyGarage3);
 
             Subscribe();
         }
@@ -83,10 +86,20 @@ namespace AutoMechanic.UI
             Refresh();
         }
 
-        private void OnBuyDouble()
+        private void OnBuyGarage2()
         {
-            if (UpgradeManager.Instance != null)
-                UpgradeManager.Instance.TryBuyDoubleRepair();
+            if (UpgradeManager.Instance == null) return;
+            // Если уже куплен 2-й пост, но не 3-й — эта кнопка не должна нажиматься
+            if (UpgradeManager.Instance.ExtraBaysBought >= 1) return;
+            UpgradeManager.Instance.TryBuyBayUpgrade();
+            Refresh();
+        }
+
+        private void OnBuyGarage3()
+        {
+            if (UpgradeManager.Instance == null) return;
+            if (UpgradeManager.Instance.ExtraBaysBought >= 2) return;
+            UpgradeManager.Instance.TryBuyBayUpgrade();
             Refresh();
         }
 
@@ -95,16 +108,52 @@ namespace AutoMechanic.UI
             if (UpgradeManager.Instance == null) return;
 
             int money = EconomyManager.Instance != null ? EconomyManager.Instance.Money : 0;
+            if (moneyText != null) moneyText.text = $"${money}";
 
-            if (moneyText != null)
-                moneyText.text = $"${money}";
+            var um = UpgradeManager.Instance;
 
-            bool slotBought = !UpgradeManager.Instance.CanBuyMoreSlots;
+            // === Слоты ===
             if (slotCard != null)
-                slotCard.Refresh(slotBought, UpgradeManager.Instance.SlotUpgradeCost, money);
+            {
+                bool bought = !um.CanBuyMoreSlots;
+                int price = um.NextSlotCost;
+                if (price < 0) price = 0;
 
-            if (doubleCard != null)
-                doubleCard.Refresh(UpgradeManager.Instance.HasDoubleRepair, UpgradeManager.Instance.DoubleRepairCost, money);
+                if (bought)
+                    slotCard.Refresh(true, 0, money);
+                else
+                    slotCard.Refresh(false, price, money);
+            }
+
+            // === Второй пост ===
+            if (garage2Card != null)
+            {
+                bool bought = um.ExtraBaysBought >= 1;
+                int price = (um.bayCosts != null && um.bayCosts.Length > 0) ? um.bayCosts[0] : 0;
+
+                if (bought)
+                    garage2Card.Refresh(true, 0, money);
+                else
+                    garage2Card.Refresh(false, price, money);
+            }
+
+            // === Третий пост ===
+            if (garage3Card != null)
+            {
+                bool bought = um.ExtraBaysBought >= 2;
+                int price = (um.bayCosts != null && um.bayCosts.Length > 1) ? um.bayCosts[1] : 0;
+
+                if (bought)
+                    garage3Card.Refresh(true, 0, money);
+                else
+                {
+                    // Если 2-й пост ещё не куплен — 3-й нельзя (показываем как заблокированный)
+                    if (um.ExtraBaysBought < 1)
+                        garage3Card.Refresh(true, 0, 0); // показываем как «Куплено», но не даём нажать
+                    else
+                        garage3Card.Refresh(false, price, money);
+                }
+            }
         }
     }
 }

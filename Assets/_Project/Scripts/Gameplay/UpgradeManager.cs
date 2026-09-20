@@ -5,36 +5,71 @@ using AutoMechanic.Core;
 namespace AutoMechanic.Gameplay
 {
     /// <summary>
-    /// Управляет апгрейдами гаража. Покупаются один раз, сохраняются в PlayerPrefs.
-    /// При старте игры — восстанавливает эффекты (слоты, двойной ремонт).
+    /// Управляет апгрейдами гаража: слоты заказов и посты ремонта.
+    /// Прогрессивные цены: каждая покупка дороже.
     /// </summary>
     public class UpgradeManager : MonoBehaviour
     {
         public static UpgradeManager Instance { get; private set; }
 
         private const string KeyExtraSlots = "am_upg_slots";      // сколько слотов докуплено
-        private const string KeyDoubleRepair = "am_upg_double";   // 1 = куплен
+        private const string KeyExtraBays = "am_upg_bays";        // сколько постов докуплено
 
-        [Header("Цены")]
-        [SerializeField] private int slotUpgradeCost = 300;
-        [SerializeField] private int doubleRepairCost = 800;
+        [Header("Цены слотов (по порядку покупки)")]
+        [Tooltip("3→4 = 800, 4→5 = 1200, 5→6 = 1800, 6→7 = 2500, 7→8 = 3500")]
+        [SerializeField] private int[] slotCosts = { 800, 1200, 1800, 2500, 3500 };
+
+        [Header("Цены постов ремонта (по порядку покупки)")]
+        [Tooltip("1→2 = 2500, 2→3 = 5000")]
+        public int[] bayCosts = { 2500, 5000 };
 
         [Header("Лимиты")]
-        [Tooltip("Максимум слотов (по ТЗ 6)")]
-        [SerializeField] private int maxSlots = 6;
+        [SerializeField] private int startSlots = 3;
+        [SerializeField] private int maxSlots = 8;
+        [SerializeField] private int startBays = 1;
+        [SerializeField] private int maxBays = 3;
 
-        public int SlotUpgradeCost => slotUpgradeCost;
-        public int DoubleRepairCost => doubleRepairCost;
-
-        /// <summary>Куплен ли двойной ремонт.</summary>
-        public bool HasDoubleRepair => PlayerPrefs.GetInt(KeyDoubleRepair, 0) == 1;
-
-        /// <summary>Сколько слотов докуплено (0..3).</summary>
+        /// <summary>Сколько слотов докуплено (0..N).</summary>
         public int ExtraSlotsBought => PlayerPrefs.GetInt(KeyExtraSlots, 0);
 
+        /// <summary>Сколько постов докуплено (0..N).</summary>
+        public int ExtraBaysBought => PlayerPrefs.GetInt(KeyExtraBays, 0);
+
+        /// <summary>Текущий уровень постов: 1 + ExtraBaysBought.</summary>
+        public int CurrentBays => startBays + ExtraBaysBought;
+
         /// <summary>Можно ли ещё докупить слот.</summary>
-        public bool CanBuyMoreSlots => SlotManager.Instance != null &&
-                                       SlotManager.Instance.Slots.Count < maxSlots;
+        public bool CanBuyMoreSlots =>
+            SlotManager.Instance != null &&
+            SlotManager.Instance.Slots.Count < maxSlots &&
+            ExtraSlotsBought < slotCosts.Length;
+
+        /// <summary>Можно ли ещё докупить пост.</summary>
+        public bool CanBuyMoreBays =>
+            CurrentBays < maxBays &&
+            ExtraBaysBought < bayCosts.Length;
+
+        /// <summary>Цена следующего слота (или -1, если нельзя).</summary>
+        public int NextSlotCost
+        {
+            get
+            {
+                int idx = ExtraSlotsBought;
+                if (idx < 0 || idx >= slotCosts.Length) return -1;
+                return slotCosts[idx];
+            }
+        }
+
+        /// <summary>Цена следующего поста (или -1, если нельзя).</summary>
+        public int NextBayCost
+        {
+            get
+            {
+                int idx = ExtraBaysBought;
+                if (idx < 0 || idx >= bayCosts.Length) return -1;
+                return bayCosts[idx];
+            }
+        }
 
         public event Action OnUpgradesChanged;
 
@@ -50,7 +85,7 @@ namespace AutoMechanic.Gameplay
             ApplyAllUpgrades();
         }
 
-        /// <summary>Применяет все купленные апгрейды к менеджерам. Вызывается при старте.</summary>
+        /// <summary>Применяет все купленные апгрейды к менеджерам при старте.</summary>
         public void ApplyAllUpgrades()
         {
             // Слоты
@@ -58,23 +93,25 @@ namespace AutoMechanic.Gameplay
             {
                 int want = ExtraSlotsBought;
                 int current = SlotManager.Instance.Slots.Count;
-                int startSlots = 3; // по ТЗ старт 3
                 int haveExtra = current - startSlots;
                 int toAdd = want - haveExtra;
                 for (int i = 0; i < toAdd; i++)
                     SlotManager.Instance.TryAddSlot();
             }
 
-            // Двойной ремонт
-            if (HasDoubleRepair && GarageManager.Instance != null)
-                GarageManager.Instance.EnableDoubleRepair();
+            // Посты
+            if (GarageManager.Instance != null)
+            {
+                int target = CurrentBays;
+                GarageManager.Instance.SetMaxConcurrentRepairs(target);
+            }
 
             OnUpgradesChanged?.Invoke();
         }
 
         // ==================== ПОКУПКА ====================
 
-        /// <summary>Купить +1 слот за $300.</summary>
+        /// <summary>Купить следующий слот. Цена зависит от количества купленных.</summary>
         public bool TryBuySlotUpgrade()
         {
             if (!CanBuyMoreSlots)
@@ -83,15 +120,12 @@ namespace AutoMechanic.Gameplay
                 return false;
             }
 
-            if (EconomyManager.Instance == null)
-            {
-                Debug.LogError("[UpgradeManager] Нет EconomyManager");
-                return false;
-            }
+            if (EconomyManager.Instance == null) return false;
 
-            if (!EconomyManager.Instance.Spend(slotUpgradeCost))
+            int cost = NextSlotCost;
+            if (!EconomyManager.Instance.Spend(cost))
             {
-                Debug.Log($"[UpgradeManager] Не хватает денег на слот: нужно ${slotUpgradeCost}");
+                Debug.Log($"[UpgradeManager] Не хватает на слот: нужно ${cost}");
                 return false;
             }
 
@@ -99,50 +133,49 @@ namespace AutoMechanic.Gameplay
             PlayerPrefs.Save();
 
             SlotManager.Instance.TryAddSlot();
-            Debug.Log($"[UpgradeManager] Куплен слот за ${slotUpgradeCost}. Теперь слотов: {SlotManager.Instance.Slots.Count}");
+            Debug.Log($"[UpgradeManager] Куплен слот за ${cost}. Всего слотов: {SlotManager.Instance.Slots.Count}");
 
             OnUpgradesChanged?.Invoke();
             return true;
         }
 
-        /// <summary>Купить двойной ремонт за $800.</summary>
-        public bool TryBuyDoubleRepair()
+        /// <summary>Купить следующий пост ремонта (гараж).</summary>
+        public bool TryBuyBayUpgrade()
         {
-            if (HasDoubleRepair)
+            if (!CanBuyMoreBays)
             {
-                Debug.Log("[UpgradeManager] Двойной ремонт уже куплен");
+                Debug.Log("[UpgradeManager] Максимум постов уже достигнут");
                 return false;
             }
 
-            if (EconomyManager.Instance == null)
+            if (EconomyManager.Instance == null) return false;
+
+            int cost = NextBayCost;
+            if (!EconomyManager.Instance.Spend(cost))
             {
-                Debug.LogError("[UpgradeManager] Нет EconomyManager");
+                Debug.Log($"[UpgradeManager] Не хватает на пост: нужно ${cost}");
                 return false;
             }
 
-            if (!EconomyManager.Instance.Spend(doubleRepairCost))
-            {
-                Debug.Log($"[UpgradeManager] Не хватает денег: нужно ${doubleRepairCost}");
-                return false;
-            }
-
-            PlayerPrefs.SetInt(KeyDoubleRepair, 1);
+            PlayerPrefs.SetInt(KeyExtraBays, ExtraBaysBought + 1);
             PlayerPrefs.Save();
 
             if (GarageManager.Instance != null)
-                GarageManager.Instance.EnableDoubleRepair();
+                GarageManager.Instance.SetMaxConcurrentRepairs(CurrentBays);
 
-            Debug.Log($"[UpgradeManager] Куплен двойной ремонт за ${doubleRepairCost}");
+            Debug.Log($"[UpgradeManager] Куплен пост за ${cost}. Всего постов: {CurrentBays}");
+
             OnUpgradesChanged?.Invoke();
             return true;
         }
 
         // ==================== ТЕСТЫ ====================
+
         [ContextMenu("ТЕСТ: сбросить апгрейды")]
         private void TestReset()
         {
             PlayerPrefs.DeleteKey(KeyExtraSlots);
-            PlayerPrefs.DeleteKey(KeyDoubleRepair);
+            PlayerPrefs.DeleteKey(KeyExtraBays);
             PlayerPrefs.Save();
             Debug.Log("[UpgradeManager] Апгрейды сброшены (перезапусти Play)");
         }
@@ -150,7 +183,7 @@ namespace AutoMechanic.Gameplay
         [ContextMenu("ТЕСТ: купить слот")]
         private void TestBuySlot() => TryBuySlotUpgrade();
 
-        [ContextMenu("ТЕСТ: купить двойной ремонт")]
-        private void TestBuyDouble() => TryBuyDoubleRepair();
+        [ContextMenu("ТЕСТ: купить пост")]
+        private void TestBuyBay() => TryBuyBayUpgrade();
     }
 }

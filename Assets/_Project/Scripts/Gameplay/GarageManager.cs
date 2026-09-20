@@ -117,11 +117,15 @@ namespace AutoMechanic.Gameplay
             SelectSession((currentSessionIndex - 1 + sessions.Count) % sessions.Count);
         }
 
-        public void EnableDoubleRepair()
+        /// <summary>Устанавливает количество постов ремонта (1..3).</summary>
+        public void SetMaxConcurrentRepairs(int count)
         {
-            maxConcurrentRepairs = 2;
-            Debug.Log("[GarageManager] Двойной ремонт активирован");
+            maxConcurrentRepairs = Mathf.Clamp(count, 1, 3);
+            Debug.Log($"[GarageManager] Постов ремонта: {maxConcurrentRepairs}");
         }
+
+        // Обратная совместимость со старым названием
+        public void EnableDoubleRepair() => SetMaxConcurrentRepairs(2);
 
         [ContextMenu("ТЕСТ: взять из слота 0")]
         private void TestTake0() => TakeCarFromSlot(0);

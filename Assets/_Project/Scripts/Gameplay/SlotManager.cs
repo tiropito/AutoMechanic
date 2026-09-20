@@ -33,6 +33,13 @@ namespace AutoMechanic.Gameplay
         [SerializeField] private float refillDelayMax = 2f;
         [SerializeField] private float bonusTimeSeconds = 180f;
 
+        [Header("Антиповтор")]
+        [Tooltip("Исключать из выбора машины, которые уже стоят в других слотах")]
+        [SerializeField] private bool avoidDuplicates = true;
+
+        [Tooltip("Сколько попыток перекрутить рандом, если попались дубли")]
+        [SerializeField] private int maxRerollAttempts = 20;
+
         [Header("Слоты (не трогай руками)")]
         [SerializeField] private List<SlotData> slots = new List<SlotData>();
 
@@ -89,7 +96,7 @@ namespace AutoMechanic.Gameplay
 
         private void FillSlot(int index)
         {
-            var car = PickRandomCar();
+            var car = PickRandomCar(index);
             slots[index].currentCar = car;
             slots[index].isBonus = car != null && car.isBonus;
             slots[index].timeSinceEmpty = 0f;
@@ -100,11 +107,16 @@ namespace AutoMechanic.Gameplay
             Save();
         }
 
-        private CarData PickRandomCar()
+        /// <summary>
+        /// Выбирает случайную машину для слота.
+        /// Если avoidDuplicates = true — исключает машины, которые уже в других слотах.
+        /// </summary>
+        private CarData PickRandomCar(int forSlotIndex)
         {
             if (carDatabase == null || carDatabase.allCars == null || carDatabase.allCars.Length == 0)
                 return null;
 
+            // Собираем общий пул — открытые машины
             var pool = new List<CarData>();
             foreach (var car in carDatabase.allCars)
             {
@@ -115,6 +127,41 @@ namespace AutoMechanic.Gameplay
             }
 
             if (pool.Count == 0) return null;
+
+            // Если антиповтор выключен — просто случайная из пула
+            if (!avoidDuplicates)
+                return pool[UnityEngine.Random.Range(0, pool.Count)];
+
+            // Собираем id машин, которые уже стоят в ДРУГИХ слотах
+            var usedIds = new HashSet<string>();
+            for (int i = 0; i < slots.Count; i++)
+            {
+                if (i == forSlotIndex) continue;             // не считаем сам слот
+                if (slots[i] == null) continue;
+                if (slots[i].currentCar == null) continue;
+                if (slots[i].isInRepair) continue;           // машина в ремонте — слот свободен
+                usedIds.Add(slots[i].currentCar.id);
+            }
+
+            // Если уже все машины пула стоят в слотах — берём любую (антиповтор невозможен)
+            if (usedIds.Count >= pool.Count)
+            {
+                Debug.Log("[SlotManager] Все машины пула уже в слотах — берём любую");
+                return pool[UnityEngine.Random.Range(0, pool.Count)];
+            }
+
+            // Пытаемся найти машину без дублей
+            var uniquePool = new List<CarData>();
+            foreach (var car in pool)
+            {
+                if (car == null) continue;
+                if (!usedIds.Contains(car.id)) uniquePool.Add(car);
+            }
+
+            if (uniquePool.Count > 0)
+                return uniquePool[UnityEngine.Random.Range(0, uniquePool.Count)];
+
+            // Фолбэк — случайная из общего пула
             return pool[UnityEngine.Random.Range(0, pool.Count)];
         }
 
@@ -238,6 +285,8 @@ namespace AutoMechanic.Gameplay
             return null;
         }
 
+        // ==================== ТЕСТЫ ====================
+
         [ContextMenu("ТЕСТ: сбросить сохранение слотов")]
         public void ResetSave()
         {
@@ -268,6 +317,19 @@ namespace AutoMechanic.Gameplay
                 sb.AppendLine($"  [{i}] {name}{bonus} timer={s.timeSinceEmpty:F1}/{s.refillDelay:F1}");
             }
             Debug.Log(sb.ToString());
+        }
+
+        [ContextMenu("ТЕСТ: пересобрать все слоты")]
+        private void TestRebuild()
+        {
+            for (int i = 0; i < slots.Count; i++)
+            {
+                slots[i].currentCar = null;
+                slots[i].isInRepair = false;
+                slots[i].timeSinceEmpty = 0f;
+                FillSlot(i);
+            }
+            Debug.Log("[SlotManager] Слоты пересобраны");
         }
 
         [ContextMenu("ТЕСТ: освободить слот 0")]
