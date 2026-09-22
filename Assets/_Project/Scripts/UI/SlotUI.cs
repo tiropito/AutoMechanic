@@ -1,15 +1,16 @@
 using System;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using AutoMechanic.Data;
 using AutoMechanic.Gameplay;
+using DG.Tweening;
 
 namespace AutoMechanic.UI
 {
     /// <summary>
-    /// Одна карточка слота: спрайт машины, имя, ⭐ для бонусной, кнопка «Взять».
-    /// Бонусные машины показывают обратный отсчёт.
+    /// Карточка слота. Анимация появления + пульсация для бонусных.
     /// </summary>
     public class SlotUI : MonoBehaviour
     {
@@ -31,9 +32,17 @@ namespace AutoMechanic.UI
         [SerializeField] private Color timerDanger = new Color(1f, 0.3f, 0.3f);
         [SerializeField] private Color timerRefill = new Color(0.7f, 0.7f, 0.7f);
 
+        [Header("Анимации")]
+        [SerializeField] private float appearDuration = 0.4f;
+        [SerializeField] private float bonusPulseScale = 1.04f;
+        [SerializeField] private float bonusPulseDuration = 0.8f;
+
         private int _slotIndex;
         private Action<int> _onClick;
         private SlotData _slot;
+
+        private Tween _pulseTween;
+        private bool _wasBonus;
 
         public int SlotIndex => _slotIndex;
 
@@ -47,9 +56,28 @@ namespace AutoMechanic.UI
                 clickButton.onClick.RemoveAllListeners();
                 clickButton.onClick.AddListener(() => _onClick?.Invoke(_slotIndex));
             }
+
+            // Анимация появления
+            PlayAppearAnimation();
         }
 
-        /// <summary>Обновить визуал карточки под текущее состояние слота.</summary>
+        private void PlayAppearAnimation()
+        {
+            var rt = GetComponent<RectTransform>();
+            if (rt == null) return;
+
+            // Начальное состояние: уменьшен и прозрачен
+            rt.localScale = Vector3.one * 0.85f;
+
+            var canvasGroup = GetComponent<CanvasGroup>();
+            if (canvasGroup == null) canvasGroup = gameObject.AddComponent<CanvasGroup>();
+            canvasGroup.alpha = 0f;
+
+            // Анимация scale + fade
+            rt.DOScale(1f, appearDuration).SetEase(Ease.OutBack);
+            canvasGroup.DOFade(1f, appearDuration).SetEase(Ease.OutQuad);
+        }
+
         public void Refresh(SlotData slot, bool canTake)
         {
             _slot = slot;
@@ -57,7 +85,6 @@ namespace AutoMechanic.UI
 
             bool hasCar = slot.currentCar != null;
 
-            // Спрайт
             if (carImage != null)
             {
                 bool hasSprite = hasCar && slot.currentCar.sprite != null;
@@ -65,18 +92,15 @@ namespace AutoMechanic.UI
                 carImage.enabled = hasSprite;
             }
 
-            // Имя
             if (nameText != null)
             {
                 nameText.text = hasCar ? slot.currentCar.displayName : "...";
                 nameText.color = hasCar ? slot.currentCar.RarityColor : new Color(0.6f, 0.6f, 0.6f);
             }
 
-            // ★
             if (bonusMark != null)
                 bonusMark.SetActive(hasCar && slot.isBonus);
 
-            // Цвет фона
             if (background != null)
             {
                 if (!hasCar) background.color = emptyColor;
@@ -84,17 +108,45 @@ namespace AutoMechanic.UI
                 else background.color = normalColor;
             }
 
-            // Кнопка
             if (clickButton != null)
                 clickButton.interactable = hasCar && canTake;
 
-            // Таймер — на этот кадр
+            // Управление пульсацией
+            bool isBonusNow = hasCar && slot.isBonus;
+            if (isBonusNow && !_wasBonus) StartPulse();
+            else if (!isBonusNow && _wasBonus) StopPulse();
+            _wasBonus = isBonusNow;
+
             UpdateTimerText();
+        }
+
+        private void StartPulse()
+        {
+            StopPulse();
+            var rt = GetComponent<RectTransform>();
+            if (rt == null) return;
+
+            _pulseTween = rt.DOScale(bonusPulseScale, bonusPulseDuration)
+                .SetLoops(-1, LoopType.Yoyo)
+                .SetEase(Ease.InOutSine);
+        }
+
+        private void StopPulse()
+        {
+            _pulseTween?.Kill();
+            _pulseTween = null;
+
+            var rt = GetComponent<RectTransform>();
+            if (rt != null) rt.localScale = Vector3.one;
+        }
+
+        private void OnDestroy()
+        {
+            StopPulse();
         }
 
         private void Update()
         {
-            // Таймер должен тикать каждый кадр, а не только при OnSlotsChanged
             UpdateTimerText();
         }
 
@@ -109,7 +161,7 @@ namespace AutoMechanic.UI
                     float t = Mathf.Max(0f, _slot.bonusTimeLeft);
                     int min = Mathf.FloorToInt(t / 60f);
                     int sec = Mathf.FloorToInt(t % 60f);
-                    refillText.text = $"★ {min}:{sec:00}";
+                    refillText.text = $"* {min}:{sec:00}";
                     refillText.color = t <= 30f ? timerDanger : timerNormal;
                 }
                 else

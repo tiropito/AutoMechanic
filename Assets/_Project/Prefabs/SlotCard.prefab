@@ -65,7 +65,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u2605"
+  m_text: '*'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -498,6 +498,9 @@ MonoBehaviour:
   timerNormal: {r: 1, g: 0.85, b: 0.3, a: 1}
   timerDanger: {r: 1, g: 0.3, b: 0.3, a: 1}
   timerRefill: {r: 0.7, g: 0.7, b: 0.7, a: 1}
+  appearDuration: 0.4
+  bonusPulseScale: 1.04
+  bonusPulseDuration: 0.8
 --- !u!1 &7808822547137685262
 GameObject:
   m_ObjectHideFlags: 0
