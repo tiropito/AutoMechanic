@@ -18,7 +18,7 @@ MonoBehaviour:
   type: 4
   rarity: 3
   isBonus: 1
-  sprite: {fileID: 0}
+  sprite: {fileID: -1091372253928668027, guid: 58793d319bd026244bec6bcdc80727dc, type: 3}
   possibleBreakdowns:
   - {fileID: 11400000, guid: 702c96a8bbdd7da42a022155f8c9610e, type: 2}
   - {fileID: 11400000, guid: 1ff330e3b5381e94dabad517bbab73fb, type: 2}

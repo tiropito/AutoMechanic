@@ -13,12 +13,12 @@ MonoBehaviour:
   m_Name: car_hatch_2114
   m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.Data.CarData
   id: car_hatch_2114
-  displayName: Hatch 2114
-  prototype: "\u0412\u0410\u0417 2114"
+  displayName: Hatch 2107
+  prototype: "\u0412\u0410\u0417 2107"
   type: 0
   rarity: 0
   isBonus: 0
-  sprite: {fileID: 0}
+  sprite: {fileID: 4865005805065545832, guid: 68ae783d5dcb278448f9fb6e996993b7, type: 3}
   possibleBreakdowns:
   - {fileID: 11400000, guid: 702c96a8bbdd7da42a022155f8c9610e, type: 2}
   - {fileID: 11400000, guid: 0fe6e7b88c257444a9149dc7dd5c6a8b, type: 2}
