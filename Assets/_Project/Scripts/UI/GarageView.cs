@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using AutoMechanic.Gameplay;
+using DG.Tweening;
 
 namespace AutoMechanic.UI
 {
@@ -36,13 +37,44 @@ namespace AutoMechanic.UI
         [Range(0f, 1f)]
         [SerializeField] private float backgroundDarkness = 0.9f;
 
+        [Header("Анимация машины (въезд)")]
+        [Tooltip("Длительность въезда в секундах")]
+        [SerializeField] private float carAppearDuration = 0.7f;
+
+        [Tooltip("С какой позиции по X выезжает (положительное = справа)")]
+        [SerializeField] private float carStartOffsetX = 900f;
+
+        [Header("Качение (имитация езды)")]
+        [Tooltip("Угол покачивания в градусах")]
+        [SerializeField] private float rockAngle = 1.2f;
+
+        [Tooltip("Скорость покачивания")]
+        [SerializeField] private float rockSpeed = 14f;
+
+        [Tooltip("Амплитуда вертикального боба (в пикселях)")]
+        [SerializeField] private float bobHeight = 4f;
+
+        [Tooltip("Скорость боба")]
+        [SerializeField] private float bobSpeed = 18f;
+
         private int _leftSessionIndex = -1;
         private int _rightSessionIndex = -1;
+        private string _lastCarId;
+        private Tween _carTween;
+        private Tween _fadeTween;
+        private Tween _rockTween;
+        private Tween _bobTween;
+
+        private Vector2 _carBasePos;
 
         private void OnEnable() { Subscribe(); Refresh(); }
         private void OnDisable() { Unsubscribe(); }
-        private void Start() { Subscribe(); Refresh(); }
-        private void OnDestroy() { Unsubscribe(); }
+
+        private void OnDestroy()
+        {
+            Unsubscribe();
+            KillCarTweens();
+        }
 
         private void Subscribe()
         {
@@ -120,25 +152,37 @@ namespace AutoMechanic.UI
             if (session != null && session.car != null)
             {
                 bool hasSprite = session.car.sprite != null;
+                string currentCarId = session.car.id;
+                bool carChanged = currentCarId != _lastCarId;
+
                 if (carSprite != null)
                 {
                     carSprite.sprite = hasSprite ? session.car.sprite : null;
                     carSprite.enabled = hasSprite;
-                    carSprite.color = hasSprite ? Color.white : new Color(1, 1, 1, 0);
+                    carSprite.color = hasSprite ? new Color(1, 1, 1, 1) : new Color(1, 1, 1, 0);
                     float scale = session.car.spriteScale > 0f ? session.car.spriteScale : 1f;
                     carSprite.rectTransform.localScale = Vector3.one * scale;
                 }
+
                 if (carNameText != null)
                 {
                     carNameText.text = session.car.displayName;
                     carNameText.color = session.car.RarityColor;
                     carNameText.gameObject.SetActive(true);
                 }
+
+                if (carChanged)
+                {
+                    _lastCarId = currentCarId;
+                    PlayCarAppearAnimation();
+                }
             }
             else
             {
                 if (carSprite != null) { carSprite.enabled = false; carSprite.color = new Color(1, 1, 1, 0); }
                 if (carNameText != null) carNameText.gameObject.SetActive(false);
+                _lastCarId = null;
+                KillCarTweens();
             }
 
             UpdateBackgroundCars(sessions, current);
@@ -194,6 +238,71 @@ namespace AutoMechanic.UI
             if (button != null) button.interactable = true;
         }
 
+        // ==================== АНИМАЦИЯ ====================
+
+        private void PlayCarAppearAnimation()
+        {
+            if (carSprite == null) return;
+
+            KillCarTweens();
+
+            var rt = carSprite.rectTransform;
+            _carBasePos = rt.anchoredPosition;
+            rt.localRotation = Quaternion.identity;
+
+            // Старт: справа за экраном + прозрачность
+            Vector2 startPos = _carBasePos + new Vector2(carStartOffsetX, 0f);
+            rt.anchoredPosition = startPos;
+
+            var c = carSprite.color;
+            c.a = 0f;
+            carSprite.color = c;
+
+            // Въезд + fade
+            _carTween = rt.DOAnchorPos(_carBasePos, carAppearDuration)
+                .SetEase(Ease.OutCubic)
+                .OnComplete(StartIdleRock);
+
+            _fadeTween = carSprite.DOFade(1f, carAppearDuration * 0.6f).SetEase(Ease.OutQuad);
+
+            // Качение во время движения
+            rt.localRotation = Quaternion.Euler(0, 0, -rockAngle);
+            _rockTween = rt.DOLocalRotate(new Vector3(0, 0, rockAngle), rockSpeed * 0.05f)
+                .SetLoops(-1, LoopType.Yoyo)
+                .SetEase(Ease.InOutSine);
+        }
+
+        /// <summary>
+        /// После въезда — остановить покачивание и запустить лёгкий idle-боб (машина «дышит»).
+        /// </summary>
+        private void StartIdleRock()
+        {
+            _rockTween?.Kill();
+            _bobTween?.Kill();
+
+            var rt = carSprite.rectTransform;
+            rt.localRotation = Quaternion.identity;
+            rt.anchoredPosition = _carBasePos;
+
+            // Лёгкий вертикальный боб (машина стоит, но «дышит»)
+            _bobTween = rt.DOAnchorPos(_carBasePos + new Vector2(0, bobHeight), 1.2f)
+                .SetLoops(-1, LoopType.Yoyo)
+                .SetEase(Ease.InOutSine);
+        }
+
+        private void KillCarTweens()
+        {
+            _carTween?.Kill();
+            _fadeTween?.Kill();
+            _rockTween?.Kill();
+            _bobTween?.Kill();
+
+            if (carSprite != null)
+            {
+                carSprite.rectTransform.localRotation = Quaternion.identity;
+            }
+        }
+
         private Sprite GetBackgroundForBay(int bayIndex)
         {
             switch (bayIndex)
@@ -207,7 +316,6 @@ namespace AutoMechanic.UI
 
         private void HideAll()
         {
-            // Фон гаража НЕ прячем — показываем стартовый
             if (backgroundImage != null)
             {
                 if (bay1Background != null) backgroundImage.sprite = bay1Background;
@@ -217,15 +325,17 @@ namespace AutoMechanic.UI
                 backgroundImage.enabled = true;
             }
 
-            // Машины — прячем
+            KillCarTweens();
+
             if (carSprite != null) { carSprite.sprite = null; carSprite.enabled = false; carSprite.color = new Color(1, 1, 1, 0); }
             if (carNameText != null) { carNameText.text = ""; carNameText.gameObject.SetActive(false); }
-            if (backgroundCarLeft != null) { backgroundCarLeft.sprite = null; backgroundCarLeft.enabled = false; backgroundCarLeft.color = new Color(1,1,1,0); }
-            if (backgroundCarRight != null) { backgroundCarRight.sprite = null; backgroundCarRight.enabled = false; backgroundCarRight.color = new Color(1,1,1,0); }
+            if (backgroundCarLeft != null) { backgroundCarLeft.sprite = null; backgroundCarLeft.enabled = false; backgroundCarLeft.color = new Color(1, 1, 1, 0); }
+            if (backgroundCarRight != null) { backgroundCarRight.sprite = null; backgroundCarRight.enabled = false; backgroundCarRight.color = new Color(1, 1, 1, 0); }
             if (backgroundCarLeftButton != null) backgroundCarLeftButton.interactable = false;
             if (backgroundCarRightButton != null) backgroundCarRightButton.interactable = false;
             _leftSessionIndex = -1;
             _rightSessionIndex = -1;
+            _lastCarId = null;
         }
     }
 }

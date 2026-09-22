@@ -5130,6 +5130,12 @@ MonoBehaviour:
   backgroundScale: 0.5
   backgroundAlpha: 0.45
   backgroundDarkness: 0.6
+  carAppearDuration: 0.45
+  carStartOffsetX: 900
+  rockAngle: 1.2
+  rockSpeed: 14
+  bobHeight: 4
+  bobSpeed: 18
 --- !u!114 &1472551913
 MonoBehaviour:
   m_ObjectHideFlags: 0
