@@ -119,6 +119,12 @@ namespace AutoMechanic.UI
                 carSprite.sprite = hasSprite ? session.car.sprite : null;
                 carSprite.enabled = hasSprite;
                 carSprite.color = hasSprite ? Color.white : new Color(1, 1, 1, 0);
+
+                // Масштаб под конкретную машину
+                float scale = (session.car != null && session.car.spriteScale > 0f)
+                    ? session.car.spriteScale
+                    : 1f;
+                carSprite.rectTransform.localScale = Vector3.one * scale;
             }
 
             if (carNameText != null)

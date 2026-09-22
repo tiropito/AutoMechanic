@@ -39,6 +39,10 @@ namespace AutoMechanic.Data
         [Header("Визуал")]
         public Sprite sprite;
 
+        [Tooltip("Множитель размера спрайта в гараже. 1 = стандарт, 1.3 = больше")]
+        [Range(0.5f, 2f)]
+        public float spriteScale = 1f;
+
         [Header("Поломки")]
         public BreakdownData[] possibleBreakdowns;
 
