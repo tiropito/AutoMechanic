@@ -252,6 +252,10 @@ namespace AutoMechanic.Gameplay
             if (EconomyManager.Instance != null)
                 EconomyManager.Instance.Add(reward);
 
+            // Летящий текст +$X
+            if (AutoMechanic.UI.MoneyFlyUI.Instance != null)
+                AutoMechanic.UI.MoneyFlyUI.Instance.ShowReward(reward);
+
             string bonusTag = session.car.isBonus ? " (бонус ⭐ ×2)" : "";
             Debug.Log($"[RepairManager] Заказ завершён: {session.car.displayName}, +${reward}{bonusTag}");
 
@@ -273,22 +277,32 @@ namespace AutoMechanic.Gameplay
 
             var session = sessions[sessionIndex];
             int price = CalculateSellAsIsPrice(sessionIndex);
+            int actualAmount = 0;
 
             if (price > 0)
             {
                 EconomyManager.Instance.Add(price);
+                actualAmount = price;
                 Debug.Log($"[RepairManager] Продано как есть: {session.car.displayName}, +${price}");
             }
             else if (price < 0)
             {
                 int fee = Mathf.Min(-price, EconomyManager.Instance.Money);
-                if (fee > 0) EconomyManager.Instance.Spend(fee);
+                if (fee > 0)
+                {
+                    EconomyManager.Instance.Spend(fee);
+                    actualAmount = -fee;
+                }
                 Debug.Log($"[RepairManager] Отказ от заказа: {session.car.displayName}, −${fee} (штраф)");
             }
             else
             {
                 Debug.Log($"[RepairManager] Продано как есть: {session.car.displayName}, +$0");
             }
+
+            // Летящий текст (или +$X, или -$X)
+            if (actualAmount != 0 && AutoMechanic.UI.MoneyFlyUI.Instance != null)
+                AutoMechanic.UI.MoneyFlyUI.Instance.ShowAmount(actualAmount);
 
             GarageManager.Instance.CompleteRepair(sessionIndex);
             return true;
