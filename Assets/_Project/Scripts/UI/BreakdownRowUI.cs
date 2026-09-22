@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using AutoMechanic.Data;
 using AutoMechanic.Gameplay;
+using DG.Tweening;
 
 namespace AutoMechanic.UI
 {
@@ -30,9 +31,22 @@ namespace AutoMechanic.UI
         [SerializeField] private Color installingColor = new Color(1f, 0.85f, 0.3f, 0.25f);
         [SerializeField] private Color failFlashColor = new Color(1f, 0.4f, 0.4f, 0.6f);
 
+        [Header("Цвета статусов")]
+        [SerializeField] private Color fixedStatusColor = new Color(0.2f, 0.9f, 0.2f);
+        [SerializeField] private Color installingStatusColor = new Color(1f, 0.8f, 0.2f);
+        [SerializeField] private Color notFixedStatusColor = new Color(0.9f, 0.3f, 0.3f);
+
+        [Header("Анимация появления галочки")]
+        [SerializeField] private float checkAppearDuration = 0.4f;
+        [SerializeField] private float checkPopScale = 1.6f;
+
         private BreakdownData _breakdown;
         private int _sessionIndex;
         private Action<int, BreakdownData> _onClick;
+
+        // Отслеживание смены состояний
+        private bool _wasFixed;
+        private bool _wasInstalling;
 
         public BreakdownData Breakdown => _breakdown;
 
@@ -51,12 +65,15 @@ namespace AutoMechanic.UI
                 clickButton.onClick.AddListener(() => _onClick?.Invoke(_sessionIndex, _breakdown));
             }
 
+            // Сброс состояний перед первым Refresh
+            _wasFixed = false;
+            _wasInstalling = false;
+
             RefreshVisual();
         }
 
         private void Update()
         {
-            // Таймер тикает каждый кадр — обновляем UI
             RefreshVisual();
         }
 
@@ -69,43 +86,100 @@ namespace AutoMechanic.UI
             bool isInstalling = RepairManager.Instance != null &&
                                 RepairManager.Instance.IsInstalling(_sessionIndex, _breakdown);
 
+            // === Определяем, что менять ===
             if (isFixed)
             {
-                if (statusText != null)
-                {
-                    statusText.text = "OK";
-                    statusText.color = new Color(0.2f, 0.8f, 0.2f);
-                }
-                if (background != null) background.color = fixedColor;
-                if (progressFill != null) progressFill.fillAmount = 1f;
-                if (clickButton != null) clickButton.interactable = false;
+                ApplyFixedVisual();
+
+                // Анимация при переходе в "починено"
+                if (!_wasFixed)
+                    PlayCheckAppearAnimation();
             }
             else if (isInstalling)
             {
-                float left = RepairManager.Instance.GetInstallTimeLeft(_sessionIndex, _breakdown);
-                float progress = RepairManager.Instance.GetInstallProgress(_sessionIndex, _breakdown);
-
-                if (statusText != null)
-                {
-                    statusText.text = $"~ {Mathf.CeilToInt(left)}с";
-                    statusText.color = new Color(1f, 0.8f, 0.2f);
-                }
-                if (background != null) background.color = installingColor;
-                if (progressFill != null) progressFill.fillAmount = progress;
-                if (clickButton != null) clickButton.interactable = false;
+                ApplyInstallingVisual();
             }
             else
             {
-                if (statusText != null)
-                {
-                    statusText.text = "X";
-                    statusText.color = new Color(0.9f, 0.3f, 0.3f);
-                }
-                if (background != null) background.color = normalColor;
-                if (progressFill != null) progressFill.fillAmount = 0f;
-                if (clickButton != null) clickButton.interactable = true;
+                ApplyNotFixedVisual();
+            }
+
+            _wasFixed = isFixed;
+            _wasInstalling = isInstalling;
+        }
+
+        // ==================== ВИЗУАЛЫ СОСТОЯНИЙ ====================
+
+        private void ApplyFixedVisual()
+        {
+            if (statusText != null)
+            {
+                statusText.text = "OK";
+                statusText.color = fixedStatusColor;
+            }
+            if (background != null) background.color = fixedColor;
+            if (progressFill != null) progressFill.fillAmount = 1f;
+            if (clickButton != null) clickButton.interactable = false;
+        }
+
+        private void ApplyInstallingVisual()
+        {
+            float left = RepairManager.Instance.GetInstallTimeLeft(_sessionIndex, _breakdown);
+            float progress = RepairManager.Instance.GetInstallProgress(_sessionIndex, _breakdown);
+
+            if (statusText != null)
+            {
+                statusText.text = $"~ {Mathf.CeilToInt(left)}с";
+                statusText.color = installingStatusColor;
+            }
+            if (background != null) background.color = installingColor;
+            if (progressFill != null) progressFill.fillAmount = progress;
+            if (clickButton != null) clickButton.interactable = false;
+        }
+
+        private void ApplyNotFixedVisual()
+        {
+            if (statusText != null)
+            {
+                statusText.text = "X";
+                statusText.color = notFixedStatusColor;
+            }
+            if (background != null) background.color = normalColor;
+            if (progressFill != null) progressFill.fillAmount = 0f;
+            if (clickButton != null) clickButton.interactable = true;
+        }
+
+        // ==================== АНИМАЦИЯ ГАЛОЧКИ ====================
+
+        private void PlayCheckAppearAnimation()
+        {
+            // Scale-in для текста статуса
+            if (statusText != null)
+            {
+                var rt = statusText.rectTransform;
+                rt.DOKill();
+
+                rt.localScale = Vector3.one * 0.3f;
+                rt.DOScale(checkPopScale, checkAppearDuration * 0.6f)
+                    .SetEase(Ease.OutBack)
+                    .OnComplete(() =>
+                    {
+                        rt.DOScale(1f, checkAppearDuration * 0.4f).SetEase(Ease.InQuad);
+                    });
+            }
+
+            // Пульсация фона
+            if (background != null)
+            {
+                background.DOKill();
+                background.color = fixedColor;
+                background.DOFade(0f, 0.05f)  // мигание для "вспышки"
+                    .SetLoops(2, LoopType.Yoyo)
+                    .SetEase(Ease.Linear);
             }
         }
+
+        // ==================== ОШИБКА ====================
 
         public void FlashFail()
         {
@@ -119,6 +193,12 @@ namespace AutoMechanic.UI
             background.color = failFlashColor;
             yield return new WaitForSeconds(0.35f);
             RefreshVisual();
+        }
+
+        private void OnDestroy()
+        {
+            if (statusText != null) statusText.rectTransform.DOKill();
+            if (background != null) background.DOKill();
         }
     }
 }
