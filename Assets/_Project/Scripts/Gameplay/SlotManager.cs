@@ -31,7 +31,7 @@ namespace AutoMechanic.Gameplay
         [SerializeField] private int maxSlots = 6;
         [SerializeField] private float refillDelayMin = 1f;
         [SerializeField] private float refillDelayMax = 2f;
-        [SerializeField] private float bonusTimeSeconds = 180f;
+        [SerializeField] private float bonusTimeSeconds = 30f;
 
         [Header("Антиповтор")]
         [Tooltip("Исключать из выбора машины, которые уже стоят в других слотах")]

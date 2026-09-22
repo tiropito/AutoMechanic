@@ -1996,7 +1996,7 @@ MonoBehaviour:
   maxSlots: 6
   refillDelayMin: 1
   refillDelayMax: 2
-  bonusTimeSeconds: 180
+  bonusTimeSeconds: 30
   avoidDuplicates: 1
   maxRerollAttempts: 20
   slots: []
