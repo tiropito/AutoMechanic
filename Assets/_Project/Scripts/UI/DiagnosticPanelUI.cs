@@ -174,6 +174,11 @@ namespace AutoMechanic.UI
                     : $"Диагностика (${diagCost})";
 
             // === Кнопка «Продать как есть» ===
+            bool allFixedNow = diagnosed && DiagnosticManager.Instance.IsSessionComplete(current);
+
+            // Кнопка «Продать как есть» — только пока есть непочиненные поломки
+            if (sellAsIsButton != null) sellAsIsButton.gameObject.SetActive(!allFixedNow);
+
             if (sellAsIsButtonText != null && RepairManager.Instance != null)
             {
                 int price = RepairManager.Instance.CalculateSellAsIsPrice(current);
@@ -184,7 +189,6 @@ namespace AutoMechanic.UI
                 else
                     sellAsIsButtonText.text = "Продать как есть";
             }
-            if (sellAsIsButton != null) sellAsIsButton.interactable = true;
 
             if (!diagnosed)
             {

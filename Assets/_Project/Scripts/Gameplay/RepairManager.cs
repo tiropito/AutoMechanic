@@ -352,7 +352,7 @@ namespace AutoMechanic.Gameplay
             if (breakdownRarityBonus != null && rIdx >= 0 && rIdx < breakdownRarityBonus.Length)
                 rarityBonus = breakdownRarityBonus[rIdx];
 
-            float profitRate = machineRate + rarityBonus;
+            float profitRate = 1f + machineRate + rarityBonus;
             int reward = Mathf.RoundToInt(totalPartsCost * profitRate);
 
             if (session.car.isBonus) reward *= bonusMultiplier;
