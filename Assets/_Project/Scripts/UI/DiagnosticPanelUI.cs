@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using AutoMechanic.Core;
 using AutoMechanic.Data;
 using AutoMechanic.Gameplay;
+using DG.Tweening;
 
 namespace AutoMechanic.UI
 {
@@ -37,6 +38,7 @@ namespace AutoMechanic.UI
 
         private readonly List<BreakdownRowUI> _rows = new List<BreakdownRowUI>();
         private readonly List<SessionTabUI> _tabs = new List<SessionTabUI>();
+        private Tween _completePulseTween;
 
         private void Start()
         {
@@ -66,6 +68,8 @@ namespace AutoMechanic.UI
 
         private void OnDestroy()
         {
+            _completePulseTween?.Kill();
+
             if (GarageManager.Instance != null)
             {
                 GarageManager.Instance.OnSessionsChanged -= Refresh;
@@ -215,10 +219,41 @@ namespace AutoMechanic.UI
                     : "Кликни по поломке, чтобы поставить деталь";
 
             if (completeButton != null)
+            {
                 completeButton.interactable = allFixed;
+
+                if (allFixed && _completePulseTween == null)
+                    StartCompletePulse();
+                else if (!allFixed && _completePulseTween != null)
+                    StopCompletePulse();
+            }
 
             if (completeButtonText != null)
                 completeButtonText.text = "Завершить заказ";
+        }
+
+        private void StartCompletePulse()
+        {
+            if (completeButton == null) return;
+
+            var rt = completeButton.GetComponent<RectTransform>();
+            if (rt == null) return;
+
+            _completePulseTween?.Kill();
+            rt.localScale = Vector3.one;
+
+            _completePulseTween = rt.DOScale(1.06f, 0.6f)
+                .SetLoops(-1, LoopType.Yoyo)
+                .SetEase(Ease.InOutSine);
+        }
+
+        private void StopCompletePulse()
+        {
+            _completePulseTween?.Kill();
+            _completePulseTween = null;
+
+            if (completeButton != null)
+                completeButton.GetComponent<RectTransform>().localScale = Vector3.one;
         }
 
         private void OnTabClicked(int index)

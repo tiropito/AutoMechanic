@@ -72,9 +72,18 @@ namespace AutoMechanic.UI
         public void RefreshVisual(int haveCount, bool canAfford)
         {
             if (countText != null) countText.text = haveCount > 0 ? $"×{haveCount}" : "";
-            if (background != null) background.color = canAfford ? normalColor : cantAffordColor;
+
+            bool canSell = haveCount > 0;
+
+            // Фон краснеет только если НИ купить, НИ продать нельзя
+            if (background != null)
+            {
+                bool fullyBlocked = !canAfford && !canSell;
+                background.color = fullyBlocked ? cantAffordColor : normalColor;
+            }
+
             if (buyButton != null) buyButton.interactable = canAfford;
-            if (sellButton != null) sellButton.interactable = haveCount > 0;
+            if (sellButton != null) sellButton.interactable = canSell;
         }
     }
 }

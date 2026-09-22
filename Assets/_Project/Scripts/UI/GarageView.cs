@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using AutoMechanic.Gameplay;
@@ -39,10 +40,17 @@ namespace AutoMechanic.UI
 
         [Header("Анимация машины (въезд)")]
         [Tooltip("Длительность въезда в секундах")]
-        [SerializeField] private float carAppearDuration = 0.7f;
+        [SerializeField] private float carAppearDuration = 1.2f;
 
         [Tooltip("С какой позиции по X выезжает (положительное = справа)")]
         [SerializeField] private float carStartOffsetX = 900f;
+
+        [Header("Анимация машины (выезд)")]
+        [Tooltip("Длительность выезда в секундах")]
+        [SerializeField] private float carLeaveDuration = 1.4f;
+
+        [Tooltip("На сколько X уезжает влево")]
+        [SerializeField] private float carLeaveOffsetX = -1200f;
 
         [Header("Качение (имитация езды)")]
         [Tooltip("Угол покачивания в градусах")]
@@ -270,6 +278,47 @@ namespace AutoMechanic.UI
             _rockTween = rt.DOLocalRotate(new Vector3(0, 0, rockAngle), rockSpeed * 0.05f)
                 .SetLoops(-1, LoopType.Yoyo)
                 .SetEase(Ease.InOutSine);
+        }
+
+        /// <summary>Машина уезжает влево и исчезает. Вызывается при завершении заказа.</summary>
+        public void PlayCarLeaveAnimation(Action onComplete = null)
+        {
+            if (carSprite == null || !carSprite.enabled)
+            {
+                onComplete?.Invoke();
+                return;
+            }
+
+            _carTween?.Kill();
+            _fadeTween?.Kill();
+            _rockTween?.Kill();
+            _bobTween?.Kill();
+
+            var rt = carSprite.rectTransform;
+            rt.localRotation = Quaternion.identity;
+            Vector2 basePos = rt.anchoredPosition;
+            Vector2 targetPos = basePos + new Vector2(carLeaveOffsetX, 0f);
+
+            // Лёгкое покачивание при движении
+            rt.localRotation = Quaternion.Euler(0, 0, rockAngle);
+            _rockTween = rt.DOLocalRotate(new Vector3(0, 0, -rockAngle), carLeaveDuration * 0.15f)
+                .SetLoops(-1, LoopType.Yoyo)
+                .SetEase(Ease.InOutSine);
+
+            // Уезд + fade
+            _carTween = rt.DOAnchorPos(targetPos, carLeaveDuration)
+                .SetEase(Ease.InCubic)
+                .OnComplete(() =>
+                {
+                    _rockTween?.Kill();
+                    rt.localRotation = Quaternion.identity;
+                    _lastCarId = null;
+                    onComplete?.Invoke();
+                });
+
+            _fadeTween = carSprite.DOFade(0f, carLeaveDuration * 0.7f)
+                .SetDelay(carLeaveDuration * 0.3f)
+                .SetEase(Ease.InQuad);
         }
 
         /// <summary>

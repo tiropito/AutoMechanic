@@ -42,7 +42,10 @@ namespace AutoMechanic.UI
         private SlotData _slot;
 
         private Tween _pulseTween;
+        private Tween _carPopTween;
         private bool _wasBonus;
+        private bool _wasHasCar;
+        private bool _wasInitialized;
 
         public int SlotIndex => _slotIndex;
 
@@ -76,6 +79,17 @@ namespace AutoMechanic.UI
             // Анимация scale + fade
             rt.DOScale(1f, appearDuration).SetEase(Ease.OutBack);
             canvasGroup.DOFade(1f, appearDuration).SetEase(Ease.OutQuad);
+        }
+
+        private void PlayCarAppearPop()
+        {
+            if (carImage == null) return;
+
+            var rt = carImage.rectTransform;
+            _carPopTween?.Kill();
+            rt.localScale = Vector3.one;
+
+            _carPopTween = rt.DOPunchScale(Vector3.one * 0.25f, 0.35f, 8, 0.8f);
         }
 
         public void Refresh(SlotData slot, bool canTake)
@@ -112,10 +126,19 @@ namespace AutoMechanic.UI
                 clickButton.interactable = hasCar && canTake;
 
             // Управление пульсацией
+            // Pop при появлении новой машины (не при первом Refresh)
+            bool hasCarNow = hasCar;
+            if (hasCarNow && !_wasHasCar && _wasInitialized)
+                PlayCarAppearPop();
+
+            _wasHasCar = hasCarNow;
+
             bool isBonusNow = hasCar && slot.isBonus;
             if (isBonusNow && !_wasBonus) StartPulse();
             else if (!isBonusNow && _wasBonus) StopPulse();
             _wasBonus = isBonusNow;
+
+            _wasInitialized = true;
 
             UpdateTimerText();
         }
@@ -143,6 +166,7 @@ namespace AutoMechanic.UI
         private void OnDestroy()
         {
             StopPulse();
+            _carPopTween?.Kill();
         }
 
         private void Update()

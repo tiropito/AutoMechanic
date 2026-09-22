@@ -262,7 +262,20 @@ namespace AutoMechanic.Gameplay
             if (CollectionManager.Instance != null)
                 CollectionManager.Instance.MarkRepaired(session.car);
 
-            GarageManager.Instance.CompleteRepair(sessionIndex);
+            // Анимация отъезда + потом убираем сессию
+            var view = FindObjectOfType<AutoMechanic.UI.GarageView>();
+            if (view != null)
+            {
+                view.PlayCarLeaveAnimation(() =>
+                {
+                    GarageManager.Instance.CompleteRepair(sessionIndex);
+                });
+            }
+            else
+            {
+                GarageManager.Instance.CompleteRepair(sessionIndex);
+            }
+
             return true;
         }
 
