@@ -28,6 +28,10 @@ namespace AutoMechanic.Gameplay
         [Tooltip("Во сколько раз больше за бонусную машину")]
         [SerializeField] private int bonusMultiplier = 2;
 
+        [Header("Награда за завершение заказа")]
+        [Tooltip("Минимальная сумма за завершённый заказ (даже если поломки дешёвые)")]
+        [SerializeField] private int minOrderReward = 50;
+
         [Header("Продажа недоремонтированной машины")]
         [Tooltip("Процент от стоимости установленных деталей, который получит игрок")]
         [SerializeField] private float sellAsIsRate = 0.4f;
@@ -383,8 +387,9 @@ namespace AutoMechanic.Gameplay
 
         private int CalculateOrderReward(RepairSession session)
         {
-            if (session == null || session.car == null) return 0;
+            if (session == null || session.car == null) return minOrderReward;
 
+            // Стоимость всех деталей
             int totalPartsCost = 0;
             PartRarity maxBreakdownRarity = PartRarity.Common;
 
@@ -396,13 +401,13 @@ namespace AutoMechanic.Gameplay
                 if (r > maxBreakdownRarity) maxBreakdownRarity = r;
             }
 
-            if (totalPartsCost <= 0) return 50;
-
+            // Ставка машины
             float machineRate = 0.25f;
             int mIdx = (int)session.car.rarity;
             if (machineProfitRates != null && mIdx >= 0 && mIdx < machineProfitRates.Length)
                 machineRate = machineProfitRates[mIdx];
 
+            // Бонус за редкость поломки
             float rarityBonus = 0f;
             int rIdx = (int)maxBreakdownRarity;
             if (breakdownRarityBonus != null && rIdx >= 0 && rIdx < breakdownRarityBonus.Length)
@@ -411,8 +416,19 @@ namespace AutoMechanic.Gameplay
             float profitRate = 1f + machineRate + rarityBonus;
             int reward = Mathf.RoundToInt(totalPartsCost * profitRate);
 
+            // + Возврат стоимости диагностики — она окупается при завершении
+            int diagCost = 0;
+            if (DiagnosticManager.Instance != null)
+                diagCost = DiagnosticManager.Instance.GetDiagnosisCost(session.car);
+            reward += diagCost;
+
+            // Минимум за заказ
+            reward = Mathf.Max(reward, minOrderReward);
+
+            // Бонусная машина
             if (session.car.isBonus) reward *= bonusMultiplier;
 
+            // Красивое округление
             if (reward >= 10000) reward = Mathf.RoundToInt(reward / 1000f) * 1000;
             else if (reward >= 1000) reward = Mathf.RoundToInt(reward / 100f) * 100;
             else if (reward >= 100) reward = Mathf.RoundToInt(reward / 10f) * 10;
