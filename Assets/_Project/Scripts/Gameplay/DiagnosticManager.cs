@@ -19,10 +19,11 @@ namespace AutoMechanic.Gameplay
         [SerializeField] private int maxBreakdowns = 3;
 
         [Header("Веса редкости (шанс выпадения)")]
+        [Header("Веса редкости (шанс выпадения)")]
         [SerializeField] private float weightCommon = 100f;
-        [SerializeField] private float weightUncommon = 50f;
-        [SerializeField] private float weightRare = 20f;
-        [SerializeField] private float weightEpic = 5f;
+        [SerializeField] private float weightUncommon = 60f;
+        [SerializeField] private float weightRare = 15f;
+        [SerializeField] private float weightEpic = 1f;
 
         public event Action<int> OnDiagnosticsUpdated;
 

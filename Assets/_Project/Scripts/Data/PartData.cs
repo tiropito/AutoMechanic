@@ -81,7 +81,7 @@ namespace AutoMechanic.Data
                 case PartRarity.Common:   return (10, 30);
                 case PartRarity.Uncommon: return (80, 200);
                 case PartRarity.Rare:     return (400, 1000);
-                case PartRarity.Epic:     return (2500, 5000);
+                case PartRarity.Epic:     return (1200, 2800);
                 default:                  return (10, 30);
             }
         }

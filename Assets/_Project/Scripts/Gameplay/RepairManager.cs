@@ -19,7 +19,7 @@ namespace AutoMechanic.Gameplay
 
         [Header("Профит по редкости машины")]
         [Tooltip("Basic, Medium, Premium, Luxury, Secret")]
-        [SerializeField] private float[] machineProfitRates = { 0.35f, 0.55f, 0.85f, 1.10f, 1.60f };
+        [SerializeField] private float[] machineProfitRates = { 0.60f, 0.85f, 1.20f, 1.60f, 2.20f };
 
         [Header("Бонус к профиту за редкость поломок")]
         [Tooltip("Common, Uncommon, Rare, Epic")]
