@@ -256,11 +256,27 @@ namespace AutoMechanic.Gameplay
             if (AutoMechanic.UI.MoneyFlyUI.Instance != null)
                 AutoMechanic.UI.MoneyFlyUI.Instance.ShowReward(reward);
 
+            // Конфетти при завершении
+            if (AutoMechanic.UI.ConfettiUI.Instance != null)
+            {
+                var origin = AutoMechanic.UI.MoneyFlyUI.Instance != null
+                    ? AutoMechanic.UI.MoneyFlyUI.Instance.transform.position
+                    : Vector3.zero;
+                AutoMechanic.UI.ConfettiUI.Instance.Play(new Vector2(0, 0));
+            }
+
             string bonusTag = session.car.isBonus ? " (бонус ⭐ ×2)" : "";
             Debug.Log($"[RepairManager] Заказ завершён: {session.car.displayName}, +${reward}{bonusTag}");
 
             if (CollectionManager.Instance != null)
-                CollectionManager.Instance.MarkRepaired(session.car);
+{
+            bool wasRepaired = CollectionManager.Instance.IsRepaired(session.car);
+            CollectionManager.Instance.MarkRepaired(session.car);
+
+            // Показываем попап только для НОВОЙ машины
+            if (!wasRepaired && AutoMechanic.UI.NewCarPopupUI.Instance != null)
+                AutoMechanic.UI.NewCarPopupUI.Instance.Show(session.car);
+        }
 
             // Анимация отъезда + потом убираем сессию
             var view = FindObjectOfType<AutoMechanic.UI.GarageView>();
