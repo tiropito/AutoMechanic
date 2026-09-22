@@ -317,7 +317,20 @@ namespace AutoMechanic.Gameplay
             if (actualAmount != 0 && AutoMechanic.UI.MoneyFlyUI.Instance != null)
                 AutoMechanic.UI.MoneyFlyUI.Instance.ShowAmount(actualAmount);
 
-            GarageManager.Instance.CompleteRepair(sessionIndex);
+            // Анимация отъезда машины + освобождение поста
+            var view = FindObjectOfType<AutoMechanic.UI.GarageView>();
+            if (view != null)
+            {
+                view.PlayCarLeaveAnimation(() =>
+                {
+                    GarageManager.Instance.CompleteRepair(sessionIndex);
+                });
+            }
+            else
+            {
+                GarageManager.Instance.CompleteRepair(sessionIndex);
+            }
+
             return true;
         }
 

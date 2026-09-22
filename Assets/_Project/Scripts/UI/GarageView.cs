@@ -49,31 +49,27 @@ namespace AutoMechanic.UI
         [Tooltip("Длительность выезда в секундах")]
         [SerializeField] private float carLeaveDuration = 1.4f;
 
-        [Tooltip("На сколько X уезжает влево")]
+        [Tooltip("На сколько X уезжает влево (отрицательное)")]
         [SerializeField] private float carLeaveOffsetX = -1200f;
 
         [Header("Качение (имитация езды)")]
-        [Tooltip("Угол покачивания в градусах")]
         [SerializeField] private float rockAngle = 1.2f;
-
-        [Tooltip("Скорость покачивания")]
         [SerializeField] private float rockSpeed = 14f;
-
-        [Tooltip("Амплитуда вертикального боба (в пикселях)")]
         [SerializeField] private float bobHeight = 4f;
-
-        [Tooltip("Скорость боба")]
         [SerializeField] private float bobSpeed = 18f;
 
         private int _leftSessionIndex = -1;
         private int _rightSessionIndex = -1;
         private string _lastCarId;
+
         private Tween _carTween;
         private Tween _fadeTween;
         private Tween _rockTween;
         private Tween _bobTween;
 
-        private Vector2 _carBasePos;
+        // Исходная позиция — сохраняется один раз, отсюда все анимации
+        private Vector2 _carOriginalPos;
+        private bool _carOriginalPosCached;
 
         private void OnEnable() { Subscribe(); Refresh(); }
         private void OnDisable() { Unsubscribe(); }
@@ -82,6 +78,13 @@ namespace AutoMechanic.UI
         {
             Unsubscribe();
             KillCarTweens();
+        }
+
+        private void CacheCarOriginalPos()
+        {
+            if (_carOriginalPosCached || carSprite == null) return;
+            _carOriginalPos = carSprite.rectTransform.anchoredPosition;
+            _carOriginalPosCached = true;
         }
 
         private void Subscribe()
@@ -134,6 +137,7 @@ namespace AutoMechanic.UI
         public void Refresh()
         {
             Subscribe();
+            CacheCarOriginalPos();
 
             if (GarageManager.Instance == null) return;
 
@@ -246,41 +250,41 @@ namespace AutoMechanic.UI
             if (button != null) button.interactable = true;
         }
 
-        // ==================== АНИМАЦИЯ ====================
+        // ==================== АНИМАЦИИ ====================
 
         private void PlayCarAppearAnimation()
         {
             if (carSprite == null) return;
 
             KillCarTweens();
+            CacheCarOriginalPos();
 
             var rt = carSprite.rectTransform;
-            _carBasePos = rt.anchoredPosition;
             rt.localRotation = Quaternion.identity;
 
-            // Старт: справа за экраном + прозрачность
-            Vector2 startPos = _carBasePos + new Vector2(carStartOffsetX, 0f);
+            // ВСЕГДА от исходной позиции
+            Vector2 startPos = _carOriginalPos + new Vector2(carStartOffsetX, 0f);
             rt.anchoredPosition = startPos;
 
             var c = carSprite.color;
             c.a = 0f;
             carSprite.color = c;
 
-            // Въезд + fade
-            _carTween = rt.DOAnchorPos(_carBasePos, carAppearDuration)
+            // Въезд
+            _carTween = rt.DOAnchorPos(_carOriginalPos, carAppearDuration)
                 .SetEase(Ease.OutCubic)
                 .OnComplete(StartIdleRock);
 
             _fadeTween = carSprite.DOFade(1f, carAppearDuration * 0.6f).SetEase(Ease.OutQuad);
 
-            // Качение во время движения
+            // Покачивание во время движения
             rt.localRotation = Quaternion.Euler(0, 0, -rockAngle);
             _rockTween = rt.DOLocalRotate(new Vector3(0, 0, rockAngle), rockSpeed * 0.05f)
                 .SetLoops(-1, LoopType.Yoyo)
                 .SetEase(Ease.InOutSine);
         }
 
-        /// <summary>Машина уезжает влево и исчезает. Вызывается при завершении заказа.</summary>
+        /// <summary>Машина уезжает влево и исчезает. Вызывается при завершении/продаже/отказе.</summary>
         public void PlayCarLeaveAnimation(Action onComplete = null)
         {
             if (carSprite == null || !carSprite.enabled)
@@ -289,29 +293,35 @@ namespace AutoMechanic.UI
                 return;
             }
 
-            _carTween?.Kill();
-            _fadeTween?.Kill();
-            _rockTween?.Kill();
-            _bobTween?.Kill();
+            KillCarTweens();
+            CacheCarOriginalPos();
 
             var rt = carSprite.rectTransform;
-            rt.localRotation = Quaternion.identity;
-            Vector2 basePos = rt.anchoredPosition;
-            Vector2 targetPos = basePos + new Vector2(carLeaveOffsetX, 0f);
 
-            // Лёгкое покачивание при движении
+            // ВСЕГДА от исходной позиции
+            rt.anchoredPosition = _carOriginalPos;
+            rt.localRotation = Quaternion.identity;
+
+            Vector2 targetPos = _carOriginalPos + new Vector2(carLeaveOffsetX, 0f);
+
+            // Покачивание при движении
             rt.localRotation = Quaternion.Euler(0, 0, rockAngle);
             _rockTween = rt.DOLocalRotate(new Vector3(0, 0, -rockAngle), carLeaveDuration * 0.15f)
                 .SetLoops(-1, LoopType.Yoyo)
                 .SetEase(Ease.InOutSine);
 
-            // Уезд + fade
+            // Уезд
             _carTween = rt.DOAnchorPos(targetPos, carLeaveDuration)
                 .SetEase(Ease.InCubic)
                 .OnComplete(() =>
                 {
                     _rockTween?.Kill();
                     rt.localRotation = Quaternion.identity;
+
+                    // Возвращаем в исходную, но невидимо
+                    rt.anchoredPosition = _carOriginalPos;
+                    carSprite.color = new Color(1, 1, 1, 0);
+
                     _lastCarId = null;
                     onComplete?.Invoke();
                 });
@@ -321,9 +331,6 @@ namespace AutoMechanic.UI
                 .SetEase(Ease.InQuad);
         }
 
-        /// <summary>
-        /// После въезда — остановить покачивание и запустить лёгкий idle-боб (машина «дышит»).
-        /// </summary>
         private void StartIdleRock()
         {
             _rockTween?.Kill();
@@ -331,10 +338,9 @@ namespace AutoMechanic.UI
 
             var rt = carSprite.rectTransform;
             rt.localRotation = Quaternion.identity;
-            rt.anchoredPosition = _carBasePos;
+            rt.anchoredPosition = _carOriginalPos;
 
-            // Лёгкий вертикальный боб (машина стоит, но «дышит»)
-            _bobTween = rt.DOAnchorPos(_carBasePos + new Vector2(0, bobHeight), 1.2f)
+            _bobTween = rt.DOAnchorPos(_carOriginalPos + new Vector2(0, bobHeight), 1.2f)
                 .SetLoops(-1, LoopType.Yoyo)
                 .SetEase(Ease.InOutSine);
         }
@@ -347,9 +353,7 @@ namespace AutoMechanic.UI
             _bobTween?.Kill();
 
             if (carSprite != null)
-            {
                 carSprite.rectTransform.localRotation = Quaternion.identity;
-            }
         }
 
         private Sprite GetBackgroundForBay(int bayIndex)
