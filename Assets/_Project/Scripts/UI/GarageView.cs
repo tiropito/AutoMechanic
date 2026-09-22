@@ -207,7 +207,17 @@ namespace AutoMechanic.UI
 
         private void HideAll()
         {
-            if (backgroundImage != null) { var c = backgroundImage.color; c.a = 0f; backgroundImage.color = c; }
+            // Фон гаража НЕ прячем — показываем стартовый
+            if (backgroundImage != null)
+            {
+                if (bay1Background != null) backgroundImage.sprite = bay1Background;
+                var c = backgroundImage.color;
+                c.a = 1f;
+                backgroundImage.color = c;
+                backgroundImage.enabled = true;
+            }
+
+            // Машины — прячем
             if (carSprite != null) { carSprite.sprite = null; carSprite.enabled = false; carSprite.color = new Color(1, 1, 1, 0); }
             if (carNameText != null) { carNameText.text = ""; carNameText.gameObject.SetActive(false); }
             if (backgroundCarLeft != null) { backgroundCarLeft.sprite = null; backgroundCarLeft.enabled = false; backgroundCarLeft.color = new Color(1,1,1,0); }
