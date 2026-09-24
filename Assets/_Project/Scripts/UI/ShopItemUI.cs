@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using AutoMechanic.Core;
 using AutoMechanic.Data;
 using AutoMechanic.Gameplay;
+using DG.Tweening;
 
 namespace AutoMechanic.UI
 {
@@ -30,6 +31,8 @@ namespace AutoMechanic.UI
         private PartData _part;
         private Action<PartData> _onBuy;
         private Action<PartData> _onSell;
+
+        private Tween _highlightTween;
 
         public PartData Part => _part;
 
@@ -72,18 +75,37 @@ namespace AutoMechanic.UI
         public void RefreshVisual(int haveCount, bool canAfford)
         {
             if (countText != null) countText.text = haveCount > 0 ? $"×{haveCount}" : "";
-
-            bool canSell = haveCount > 0;
-
-            // Фон краснеет только если НИ купить, НИ продать нельзя
-            if (background != null)
-            {
-                bool fullyBlocked = !canAfford && !canSell;
-                background.color = fullyBlocked ? cantAffordColor : normalColor;
-            }
-
+            if (background != null) background.color = canAfford ? normalColor : cantAffordColor;
             if (buyButton != null) buyButton.interactable = canAfford;
-            if (sellButton != null) sellButton.interactable = canSell;
+            if (sellButton != null) sellButton.interactable = haveCount > 0;
+        }
+
+        // ==================== ПОДСВЕТКА ====================
+
+        public void Highlight(float duration = 5f)
+        {
+            if (background == null) return;
+
+            _highlightTween?.Kill();
+
+            Color baseColor = background.color;
+            Color highlightColor = new Color(1f, 0.9f, 0.3f, 0.7f);
+
+            _highlightTween = background.DOColor(highlightColor, 0.4f)
+                .SetLoops(-1, LoopType.Yoyo)
+                .SetEase(Ease.InOutSine)
+                .OnKill(() => { if (background != null) background.color = baseColor; });
+
+            DOVirtual.DelayedCall(duration, () =>
+            {
+                _highlightTween?.Kill();
+                if (background != null) background.color = baseColor;
+            });
+        }
+
+        private void OnDestroy()
+        {
+            _highlightTween?.Kill();
         }
     }
 }

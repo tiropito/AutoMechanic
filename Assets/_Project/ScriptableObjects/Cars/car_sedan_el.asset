@@ -19,7 +19,13 @@ MonoBehaviour:
   rarity: 0
   isBonus: 0
   sprite: {fileID: 21300000, guid: 70e57d1f839e39b4b9ec112a982a6977, type: 3}
+  spriteScale: 1
   possibleBreakdowns:
   - {fileID: 11400000, guid: 702c96a8bbdd7da42a022155f8c9610e, type: 2}
   - {fileID: 11400000, guid: 0fe6e7b88c257444a9149dc7dd5c6a8b, type: 2}
   - {fileID: 11400000, guid: effa01f28dd5a504da8b048290eba4e9, type: 2}
+  smokeOffset: {x: 0, y: -10}
+  sparkOffset: {x: 0, y: -10}
+  rustOffset: {x: 10, y: -20}
+  flatWheelOffset: {x: 0, y: 15}
+  brakeGlowOffset: {x: 0, y: 20}

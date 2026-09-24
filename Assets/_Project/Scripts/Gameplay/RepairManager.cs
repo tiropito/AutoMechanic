@@ -362,10 +362,10 @@ namespace AutoMechanic.Gameplay
 
             var session = sessions[sessionIndex];
 
-            // Считаем ТОЛЬКО завершённые установки.
-            // Если таймер ещё тикает — как будто деталь не поставлена.
+            // Считаем ТОЛЬКО завершённые установки
             int fixedCount = session.fixedList != null ? session.fixedList.Count : 0;
 
+            // 0 починено → штраф (диагностика НЕ окупается)
             if (fixedCount == 0)
                 return -sellAsIsNoRepairFee;
 
@@ -375,6 +375,10 @@ namespace AutoMechanic.Gameplay
                     if (bd != null) partsCost += bd.GetPartsCost();
 
             int price = Mathf.RoundToInt(partsCost * sellAsIsRate);
+
+            // + Возврат стоимости диагностики, раз что-то уже починено
+            if (DiagnosticManager.Instance != null && session.car != null)
+                price += DiagnosticManager.Instance.GetDiagnosisCost(session.car);
 
             if (price >= 1000) price = Mathf.RoundToInt(price / 100f) * 100;
             else if (price >= 100) price = Mathf.RoundToInt(price / 10f) * 10;

@@ -12,14 +12,17 @@ namespace AutoMechanic.UI
         public static event Action<bool> OnUpgradeToggled;
 
         [SerializeField] private GameObject rootPanel;
+        [SerializeField] private TMP_Text moneyText;
 
         [Header("Карточки")]
         [SerializeField] private UpgradeCardUI slotCard;
-        [SerializeField] private UpgradeCardUI garage2Card;   // пост №2
-        [SerializeField] private UpgradeCardUI garage3Card;   // пост №3
+        [SerializeField] private UpgradeCardUI garage2Card;
+        [SerializeField] private UpgradeCardUI garage3Card;
 
         [SerializeField] private Button closeButton;
 
+        public bool IsOpen => rootPanel != null && rootPanel.activeSelf;
+        
         private void Start()
         {
             if (closeButton != null) closeButton.onClick.AddListener(Close);
@@ -35,6 +38,9 @@ namespace AutoMechanic.UI
                 garage3Card.Bind("Третий пост ремонта", "Ремонтируй 3 машины одновременно", OnBuyGarage3);
 
             Subscribe();
+
+            if (FullScreenPanelManager.Instance != null)
+                FullScreenPanelManager.Instance.RegisterUpgrade(this);
         }
 
         private void OnDestroy()
@@ -61,6 +67,10 @@ namespace AutoMechanic.UI
 
         public void Open()
         {
+            // Закрываем другие полноэкранные панели
+            if (FullScreenPanelManager.Instance != null)
+                FullScreenPanelManager.Instance.CloseAllExcept(this);
+
             if (rootPanel != null) rootPanel.SetActive(true);
             Refresh();
             OnUpgradeToggled?.Invoke(true);
@@ -88,7 +98,6 @@ namespace AutoMechanic.UI
         private void OnBuyGarage2()
         {
             if (UpgradeManager.Instance == null) return;
-            // Если уже куплен 2-й пост, но не 3-й — эта кнопка не должна нажиматься
             if (UpgradeManager.Instance.ExtraBaysBought >= 1) return;
             UpgradeManager.Instance.TryBuyBayUpgrade();
             Refresh();
@@ -107,6 +116,7 @@ namespace AutoMechanic.UI
             if (UpgradeManager.Instance == null) return;
 
             int money = EconomyManager.Instance != null ? EconomyManager.Instance.Money : 0;
+            if (moneyText != null) moneyText.text = $"${money}";
 
             var um = UpgradeManager.Instance;
 
@@ -117,10 +127,8 @@ namespace AutoMechanic.UI
                 int price = um.NextSlotCost;
                 if (price < 0) price = 0;
 
-                if (bought)
-                    slotCard.Refresh(true, 0, money);
-                else
-                    slotCard.Refresh(false, price, money);
+                if (bought) slotCard.Refresh(true, 0, money);
+                else slotCard.Refresh(false, price, money);
             }
 
             // === Второй пост ===
@@ -129,10 +137,8 @@ namespace AutoMechanic.UI
                 bool bought = um.ExtraBaysBought >= 1;
                 int price = (um.bayCosts != null && um.bayCosts.Length > 0) ? um.bayCosts[0] : 0;
 
-                if (bought)
-                    garage2Card.Refresh(true, 0, money);
-                else
-                    garage2Card.Refresh(false, price, money);
+                if (bought) garage2Card.Refresh(true, 0, money);
+                else garage2Card.Refresh(false, price, money);
             }
 
             // === Третий пост ===
@@ -141,13 +147,11 @@ namespace AutoMechanic.UI
                 bool bought = um.ExtraBaysBought >= 2;
                 int price = (um.bayCosts != null && um.bayCosts.Length > 1) ? um.bayCosts[1] : 0;
 
-                if (bought)
-                    garage3Card.Refresh(true, 0, money);
+                if (bought) garage3Card.Refresh(true, 0, money);
                 else
                 {
-                    // Если 2-й пост ещё не куплен — 3-й нельзя (показываем как заблокированный)
                     if (um.ExtraBaysBought < 1)
-                        garage3Card.Refresh(true, 0, 0); // показываем как «Куплено», но не даём нажать
+                        garage3Card.Refresh(true, 0, 0);
                     else
                         garage3Card.Refresh(false, price, money);
                 }

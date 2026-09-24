@@ -66,6 +66,7 @@ namespace AutoMechanic.Gameplay
                 fixedList = new List<BreakdownData>()
             };
 
+            GenerateBreakdowns(session);
             sessions.Add(session);
             currentSessionIndex = sessions.Count - 1;
 
@@ -76,12 +77,36 @@ namespace AutoMechanic.Gameplay
             return true;
         }
 
+        /// <summary>Заранее назначает поломки. Игрок их не видит, но эффекты показываются.</summary>
+        private void GenerateBreakdowns(RepairSession session)
+        {
+            if (session == null || session.car == null) return;
+            if (session.car.possibleBreakdowns == null || session.car.possibleBreakdowns.Length == 0) return;
+
+            var pool = new List<BreakdownData>();
+            foreach (var bd in session.car.possibleBreakdowns)
+                if (bd != null) pool.Add(bd);
+
+            if (pool.Count == 0) return;
+
+            int wanted = UnityEngine.Random.Range(1, 4);
+            int count = Mathf.Clamp(wanted, 1, pool.Count);
+
+            for (int i = pool.Count - 1; i > 0; i--)
+            {
+                int j = UnityEngine.Random.Range(0, i + 1);
+                (pool[i], pool[j]) = (pool[j], pool[i]);
+            }
+
+            for (int i = 0; i < count; i++)
+                session.brokenDownList.Add(pool[i]);
+
+            Debug.Log($"[GarageManager] Назначено поломок (заранее): {count}");
+        }
+
         public void CompleteRepair(int sessionIndex)
         {
             if (sessionIndex < 0 || sessionIndex >= sessions.Count) return;
-
-            // ВАЖНО: слот уже освобождён в TakeCarFromSlot.
-            // Повторно ReleaseSlot вызывать НЕЛЬЗЯ — обнулит приехавшую новую машину.
 
             sessions.RemoveAt(sessionIndex);
 
@@ -117,14 +142,12 @@ namespace AutoMechanic.Gameplay
             SelectSession((currentSessionIndex - 1 + sessions.Count) % sessions.Count);
         }
 
-        /// <summary>Устанавливает количество постов ремонта (1..3).</summary>
         public void SetMaxConcurrentRepairs(int count)
         {
             maxConcurrentRepairs = Mathf.Clamp(count, 1, 3);
             Debug.Log($"[GarageManager] Постов ремонта: {maxConcurrentRepairs}");
         }
 
-        // Обратная совместимость со старым названием
         public void EnableDoubleRepair() => SetMaxConcurrentRepairs(2);
 
         [ContextMenu("ТЕСТ: взять из слота 0")]
@@ -156,7 +179,7 @@ namespace AutoMechanic.Gameplay
             {
                 var s = sessions[i];
                 string mark = i == currentSessionIndex ? " ← активная" : "";
-                sb.AppendLine($"  [{i}] {s.car.displayName} | state={s.state} | слот {s.slotIndex}{mark}");
+                sb.AppendLine($"  [{i}] {s.car.displayName} | state={s.state} | слот {s.slotIndex} | поломок: {s.brokenDownList.Count}{mark}");
             }
             Debug.Log(sb.ToString());
         }
@@ -169,37 +192,34 @@ namespace AutoMechanic.Gameplay
         Completed
     }
 
-        [Serializable]
-        public class RepairSession
+    [Serializable]
+    public class RepairSession
+    {
+        public CarData car;
+        public int slotIndex;
+        public RepairState state;
+        public List<BreakdownData> brokenDownList = new List<BreakdownData>();
+        public List<BreakdownData> fixedList = new List<BreakdownData>();
+        public List<BreakdownTimer> installingList = new List<BreakdownTimer>();
+    }
+
+    [Serializable]
+    public class BreakdownTimer
+    {
+        public BreakdownData breakdown;
+        public float startTime;
+        public float endTime;
+        public float totalDuration;
+
+        public float TimeLeft => Mathf.Max(0f, endTime - Time.realtimeSinceStartup);
+
+        public float Progress
         {
-            public CarData car;
-            public int slotIndex;
-            public RepairState state;
-            public List<BreakdownData> brokenDownList = new List<BreakdownData>();
-            public List<BreakdownData> fixedList = new List<BreakdownData>();
-
-            /// <summary>Активные таймеры установки деталей.</summary>
-            public List<BreakdownTimer> installingList = new List<BreakdownTimer>();
-        }
-
-        /// <summary>Активный таймер установки одной поломки.</summary>
-        [Serializable]
-        public class BreakdownTimer
-        {
-            public BreakdownData breakdown;
-            public float startTime;       // Time.realtimeSinceStartup при старте
-            public float endTime;         // Когда завершится
-            public float totalDuration;   // Общая длительность
-
-            public float TimeLeft => Mathf.Max(0f, endTime - Time.realtimeSinceStartup);
-
-            public float Progress
+            get
             {
-                get
-                {
-                    if (totalDuration <= 0f) return 1f;
-                    return Mathf.Clamp01((Time.realtimeSinceStartup - startTime) / totalDuration);
-                }
+                if (totalDuration <= 0f) return 1f;
+                return Mathf.Clamp01((Time.realtimeSinceStartup - startTime) / totalDuration);
             }
         }
+    }
 }

@@ -24,12 +24,17 @@ namespace AutoMechanic.UI
         [SerializeField] private CarDatabase carDatabase;
 
         private readonly List<CollectionCardUI> _cards = new List<CollectionCardUI>();
-
+        
+        public bool IsOpen => rootPanel != null && rootPanel.activeSelf;
+        
         private void Start()
         {
             if (closeButton != null) closeButton.onClick.AddListener(Close);
             if (rootPanel != null) rootPanel.SetActive(false);
             Subscribe();
+
+            if (FullScreenPanelManager.Instance != null)
+                FullScreenPanelManager.Instance.RegisterCollection(this);
         }
 
         private void OnDestroy()
@@ -49,6 +54,9 @@ namespace AutoMechanic.UI
 
         public void Open()
         {
+            if (FullScreenPanelManager.Instance != null)
+                FullScreenPanelManager.Instance.CloseAllExcept(this);
+
             if (rootPanel != null) rootPanel.SetActive(true);
             if (_cards.Count == 0) Rebuild();
             Refresh();

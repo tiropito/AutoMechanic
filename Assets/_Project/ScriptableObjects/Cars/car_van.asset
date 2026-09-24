@@ -25,3 +25,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 5f0810a0aa5a3bb489ade8e705ddd668, type: 2}
   - {fileID: 11400000, guid: d883cf3855d744a42b345f3291030014, type: 2}
   - {fileID: 11400000, guid: effa01f28dd5a504da8b048290eba4e9, type: 2}
+  smokeOffset: {x: -50, y: -20}
+  sparkOffset: {x: -50, y: -20}
+  rustOffset: {x: 30, y: -30}
+  flatWheelOffset: {x: -20, y: 15}
+  brakeGlowOffset: {x: -20, y: 20}

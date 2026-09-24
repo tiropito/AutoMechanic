@@ -46,6 +46,22 @@ namespace AutoMechanic.Data
         [Header("Поломки")]
         public BreakdownData[] possibleBreakdowns;
 
+        [Header("Эффекты поломок — сдвиги")]
+        [Tooltip("Сдвиг дыма от базовой позиции. X вправо-влево, Y вверх-вниз")]
+        public Vector2 smokeOffset = Vector2.zero;
+
+        [Tooltip("Сдвиг искр")]
+        public Vector2 sparkOffset = Vector2.zero;
+
+        [Tooltip("Сдвиг ржавчины")]
+        public Vector2 rustOffset = Vector2.zero;
+
+        [Tooltip("Сдвиг спущенного колеса")]
+        public Vector2 flatWheelOffset = Vector2.zero;
+
+        [Tooltip("Сдвиг тормозного свечения")]
+        public Vector2 brakeGlowOffset = Vector2.zero;
+
         public Color RarityColor
         {
             get

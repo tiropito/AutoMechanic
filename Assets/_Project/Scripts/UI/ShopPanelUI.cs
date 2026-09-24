@@ -14,10 +14,12 @@ namespace AutoMechanic.UI
         public static event Action<bool> OnShopToggled;
 
         [SerializeField] private GameObject rootPanel;
+        [SerializeField] private TMP_Text moneyText;
         [SerializeField] private Transform itemsContainer;
         [SerializeField] private ShopItemUI itemPrefab;
         [SerializeField] private Button closeButton;
 
+        public bool IsOpen => rootPanel != null && rootPanel.activeSelf;
         private readonly List<ShopItemUI> _items = new List<ShopItemUI>();
         private PartDatabase _database;
         private bool _built;
@@ -26,11 +28,19 @@ namespace AutoMechanic.UI
         {
             if (closeButton != null) closeButton.onClick.AddListener(Close);
             if (rootPanel != null) rootPanel.SetActive(false);
+
+            if (FullScreenPanelManager.Instance != null)
+                FullScreenPanelManager.Instance.RegisterShop(this);
         }
 
         public void Open()
         {
+            // Закрываем другие полноэкранные панели
+            if (FullScreenPanelManager.Instance != null)
+                FullScreenPanelManager.Instance.CloseAllExcept(this);
+
             if (rootPanel != null) rootPanel.SetActive(true);
+
             TryFetchDatabase();
             if (!_built) { Rebuild(); _built = true; }
             RefreshAll();
@@ -101,6 +111,8 @@ namespace AutoMechanic.UI
 
         public void RefreshAll()
         {
+            if (moneyText != null && ShopManager.Instance != null)
+                moneyText.text = $"${ShopManager.Instance.GetCurrentMoney()}";
 
             foreach (var it in _items)
             {
@@ -110,6 +122,54 @@ namespace AutoMechanic.UI
                 bool can = ShopManager.Instance != null &&
                            ShopManager.Instance.CanAfford(it.Part, 1, out _, out _);
                 it.RefreshVisual(have, can);
+            }
+        }
+
+        // ==================== ПОДСВЕТКА ДЕТАЛИ ====================
+
+        /// <summary>Найти деталь по id и подсветить её на N секунд.</summary>
+        public void HighlightPart(string partId, float duration = 5f)
+        {
+            if (string.IsNullOrEmpty(partId)) return;
+
+            // Подстраховка: если магазин ещё не построен — построим
+            if (!_built || _items.Count == 0)
+            {
+                TryFetchDatabase();
+                if (!_built) { Rebuild(); _built = true; }
+                RefreshAll();
+            }
+
+            ShopItemUI target = null;
+            foreach (var item in _items)
+            {
+                if (item == null || item.Part == null) continue;
+                if (item.Part.id == partId) { target = item; break; }
+            }
+
+            if (target == null)
+            {
+                Debug.LogWarning($"[ShopPanelUI] Деталь {partId} не найдена в магазине");
+                return;
+            }
+
+            target.Highlight(duration);
+
+            var rt = target.GetComponent<RectTransform>();
+            if (rt != null && itemsContainer is RectTransform containerRt)
+            {
+                var scroll = itemsContainer.GetComponentInParent<ScrollRect>();
+                if (scroll != null && scroll.viewport != null)
+                {
+                    float contentHeight = containerRt.rect.height;
+                    float viewportHeight = scroll.viewport.rect.height;
+                    if (contentHeight > viewportHeight)
+                    {
+                        float itemY = -rt.anchoredPosition.y;
+                        float targetNorm = Mathf.Clamp01((itemY - viewportHeight * 0.5f) / (contentHeight - viewportHeight));
+                        scroll.verticalNormalizedPosition = 1f - targetNorm;
+                    }
+                }
             }
         }
     }
