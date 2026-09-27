@@ -7,7 +7,7 @@ namespace AutoMechanic.Gameplay
 {
     /// <summary>
     /// Ремонт: ставит детали с таймером, завершает заказ, продаёт недоремонтированную машину.
-    /// Защита от двойного клика через _lockedSessions.
+    /// Защита от двойного клика — через session.isCompleting (по объекту, а не по индексу).
     /// </summary>
     public class RepairManager : MonoBehaviour
     {
@@ -35,8 +35,6 @@ namespace AutoMechanic.Gameplay
         [Header("Завершение заказа")]
         [Tooltip("Минимальная сумма за завершённый заказ")]
         [SerializeField] private int minOrderReward = 50;
-
-        private readonly HashSet<int> _lockedSessions = new HashSet<int>();
 
         private void Awake()
         {
@@ -226,12 +224,6 @@ namespace AutoMechanic.Gameplay
                 return false;
             }
 
-            if (_lockedSessions.Contains(sessionIndex))
-            {
-                Debug.Log("[RepairManager] Сессия уже завершается");
-                return false;
-            }
-
             var sessions = GarageManager.Instance.Sessions;
             if (sessionIndex < 0 || sessionIndex >= sessions.Count)
             {
@@ -240,6 +232,13 @@ namespace AutoMechanic.Gameplay
             }
 
             var session = sessions[sessionIndex];
+
+            // Защита от двойного клика (по объекту сессии, а не по индексу)
+            if (session.isCompleting)
+            {
+                Debug.Log("[RepairManager] Сессия уже завершается");
+                return false;
+            }
 
             if (session.installingList != null && session.installingList.Count > 0)
             {
@@ -253,7 +252,7 @@ namespace AutoMechanic.Gameplay
                 return false;
             }
 
-            _lockedSessions.Add(sessionIndex);
+            session.isCompleting = true;
 
             int reward = CalculateOrderReward(session);
 
@@ -266,7 +265,6 @@ namespace AutoMechanic.Gameplay
             if (AutoMechanic.UI.ConfettiUI.Instance != null)
                 AutoMechanic.UI.ConfettiUI.Instance.Play(Vector2.zero);
 
-            // Звук кассы
             if (AudioManager.Instance != null)
                 AudioManager.Instance.PlayCash();
 
@@ -282,13 +280,11 @@ namespace AutoMechanic.Gameplay
                 view.PlayCarLeaveAnimation(() =>
                 {
                     GarageManager.Instance.CompleteRepair(sessionIndex);
-                    _lockedSessions.Remove(sessionIndex);
                 });
             }
             else
             {
                 GarageManager.Instance.CompleteRepair(sessionIndex);
-                _lockedSessions.Remove(sessionIndex);
             }
 
             return true;
@@ -300,16 +296,18 @@ namespace AutoMechanic.Gameplay
         {
             if (GarageManager.Instance == null || EconomyManager.Instance == null) return false;
 
-            if (_lockedSessions.Contains(sessionIndex))
+            var sessions = GarageManager.Instance.Sessions;
+            if (sessionIndex < 0 || sessionIndex >= sessions.Count) return false;
+
+            var session = sessions[sessionIndex];
+
+            // Защита от двойного клика
+            if (session.isCompleting)
             {
                 Debug.Log("[RepairManager] Сессия уже завершается");
                 return false;
             }
 
-            var sessions = GarageManager.Instance.Sessions;
-            if (sessionIndex < 0 || sessionIndex >= sessions.Count) return false;
-
-            var session = sessions[sessionIndex];
             int price = CalculateSellAsIsPrice(sessionIndex);
             int actualAmount = 0;
 
@@ -337,11 +335,10 @@ namespace AutoMechanic.Gameplay
             if (actualAmount != 0 && AutoMechanic.UI.MoneyFlyUI.Instance != null)
                 AutoMechanic.UI.MoneyFlyUI.Instance.ShowAmount(actualAmount);
 
-            // Звук — только при положительной сумме
             if (actualAmount > 0 && AudioManager.Instance != null)
                 AudioManager.Instance.PlayCash();
 
-            _lockedSessions.Add(sessionIndex);
+            session.isCompleting = true;
 
             var view = FindObjectOfType<AutoMechanic.UI.GarageView>();
             if (view != null)
@@ -349,13 +346,11 @@ namespace AutoMechanic.Gameplay
                 view.PlayCarLeaveAnimation(() =>
                 {
                     GarageManager.Instance.CompleteRepair(sessionIndex);
-                    _lockedSessions.Remove(sessionIndex);
                 });
             }
             else
             {
                 GarageManager.Instance.CompleteRepair(sessionIndex);
-                _lockedSessions.Remove(sessionIndex);
             }
 
             return true;

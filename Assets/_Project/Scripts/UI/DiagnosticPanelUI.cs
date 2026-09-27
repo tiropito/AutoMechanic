@@ -32,9 +32,13 @@ namespace AutoMechanic.UI
         [SerializeField] private Button completeButton;
         [SerializeField] private TMP_Text completeButtonText;
 
-        [Header("Кнопка «Продать как есть»")]
+        [Header("Кнопка Продать как есть")]
         [SerializeField] private Button sellAsIsButton;
         [SerializeField] private TMP_Text sellAsIsButtonText;
+
+        [Header("Анимация CompleteButton")]
+        [SerializeField] private float completePulseScale = 1.06f;
+        [SerializeField] private float completePulseDuration = 0.6f;
 
         private readonly List<BreakdownRowUI> _rows = new List<BreakdownRowUI>();
         private readonly List<SessionTabUI> _tabs = new List<SessionTabUI>();
@@ -130,6 +134,7 @@ namespace AutoMechanic.UI
             if (GarageManager.Instance == null || DiagnosticManager.Instance == null)
             {
                 if (rootPanel != null) rootPanel.SetActive(false);
+                StopCompletePulse();
                 return;
             }
 
@@ -138,6 +143,7 @@ namespace AutoMechanic.UI
             if (sessions.Count == 0)
             {
                 if (rootPanel != null) rootPanel.SetActive(false);
+                StopCompletePulse();
                 return;
             }
 
@@ -160,30 +166,29 @@ namespace AutoMechanic.UI
 
             var session = sessions[current];
 
-            if (carNameText != null)
-            {
-                carNameText.text = session.car.displayName;
-                carNameText.color = session.car.RarityColor;
-            }
+            if (carNameText != null) carNameText.text = session.car.displayName;
 
             bool diagnosed = session.state != RepairState.NotDiagnosed;
 
-            // === Стоимость диагностики по редкости машины ===
-            int diagCost = DiagnosticManager.Instance.GetDiagnosisCost(current);
+            // ==================== КНОПКИ — ВСЕГДА СБРАСЫВАЕМ В НАЧАЛЕ ====================
 
             if (diagnoseButton != null)
                 diagnoseButton.interactable = !diagnosed && EconomyManager.Instance != null;
 
             if (diagnoseButtonText != null)
+            {
+                int diagCost = DiagnosticManager.Instance.GetDiagnosisCost(current);
                 diagnoseButtonText.text = diagnosed
                     ? "Уже проверено"
                     : $"Диагностика (${diagCost})";
+            }
 
-            // === Кнопка «Продать как есть» ===
-            bool allFixedNow = diagnosed && DiagnosticManager.Instance.IsSessionComplete(current);
-
-            // Кнопка «Продать как есть» — только пока есть непочиненные поломки
-            if (sellAsIsButton != null) sellAsIsButton.gameObject.SetActive(!allFixedNow);
+            // «Продать как есть» — доступна всегда
+            if (sellAsIsButton != null)
+            {
+                sellAsIsButton.gameObject.SetActive(true);
+                sellAsIsButton.interactable = true;
+            }
 
             if (sellAsIsButtonText != null && RepairManager.Instance != null)
             {
@@ -196,14 +201,25 @@ namespace AutoMechanic.UI
                     sellAsIsButtonText.text = "Продать как есть";
             }
 
+            // «Завершить заказ» — сбрасываем, но активна будет только если всё починено
+            if (completeButton != null)
+                completeButton.interactable = false;
+
+            if (completeButtonText != null)
+                completeButtonText.text = "Завершить заказ";
+
+            // ==================== ЕСЛИ НЕ ДИАГНОСТИРОВАНА ====================
+
             if (!diagnosed)
             {
                 if (hintText != null)
                     hintText.text = "Нажми «Диагностика», чтобы узнать поломки";
-                if (completeButton != null) completeButton.interactable = false;
-                if (completeButtonText != null) completeButtonText.text = "Завершить заказ";
-                return;
+
+                StopCompletePulse();
+                return;   // ← НО КНОПКИ УЖЕ СБРОШЕНЫ ВЫШЕ
             }
+
+            // ==================== СПИСОК ПОЛОМОК ====================
 
             foreach (var bd in session.brokenDownList)
             {
@@ -221,17 +237,16 @@ namespace AutoMechanic.UI
                     : "Кликни по поломке, чтобы поставить деталь";
 
             if (completeButton != null)
-            {
                 completeButton.interactable = allFixed;
-
-                if (allFixed && _completePulseTween == null)
-                    StartCompletePulse();
-                else if (!allFixed && _completePulseTween != null)
-                    StopCompletePulse();
-            }
 
             if (completeButtonText != null)
                 completeButtonText.text = "Завершить заказ";
+
+            // Пульсация CompleteButton при готовности
+            if (allFixed && _completePulseTween == null)
+                StartCompletePulse();
+            else if (!allFixed)
+                StopCompletePulse();
         }
 
         private void StartCompletePulse()
@@ -244,7 +259,7 @@ namespace AutoMechanic.UI
             _completePulseTween?.Kill();
             rt.localScale = Vector3.one;
 
-            _completePulseTween = rt.DOScale(1.06f, 0.6f)
+            _completePulseTween = rt.DOScale(completePulseScale, completePulseDuration)
                 .SetLoops(-1, LoopType.Yoyo)
                 .SetEase(Ease.InOutSine);
         }

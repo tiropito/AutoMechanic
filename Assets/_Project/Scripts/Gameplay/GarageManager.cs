@@ -201,6 +201,8 @@ namespace AutoMechanic.Gameplay
         public List<BreakdownData> brokenDownList = new List<BreakdownData>();
         public List<BreakdownData> fixedList = new List<BreakdownData>();
         public List<BreakdownTimer> installingList = new List<BreakdownTimer>();
+
+        [NonSerialized] public bool isCompleting; // защита от двойного клика
     }
 
     [Serializable]
