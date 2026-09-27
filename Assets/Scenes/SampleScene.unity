@@ -1121,6 +1121,7 @@ GameObject:
   - component: {fileID: 287880710}
   - component: {fileID: 287880709}
   - component: {fileID: 287880711}
+  - component: {fileID: 287880712}
   m_Layer: 5
   m_Name: BackgroundCarRight
   m_TagString: Untagged
@@ -1229,6 +1230,18 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &287880712
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 287880707}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b196a70265ebb5540876bb9daebff27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.ButtonSound
 --- !u!1 &291852769
 GameObject:
   m_ObjectHideFlags: 0
@@ -1453,6 +1466,7 @@ GameObject:
   - component: {fileID: 307639585}
   - component: {fileID: 307639584}
   - component: {fileID: 307639583}
+  - component: {fileID: 307639586}
   m_Layer: 5
   m_Name: UpgradeButton
   m_TagString: Untagged
@@ -1574,6 +1588,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 307639581}
   m_CullTransparentMesh: 1
+--- !u!114 &307639586
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 307639581}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b196a70265ebb5540876bb9daebff27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.ButtonSound
 --- !u!1 &328529457
 GameObject:
   m_ObjectHideFlags: 0
@@ -2000,6 +2026,7 @@ GameObject:
   - component: {fileID: 453241703}
   - component: {fileID: 453241706}
   - component: {fileID: 453241705}
+  - component: {fileID: 453241707}
   m_Layer: 5
   m_Name: BrakesCard
   m_TagString: Untagged
@@ -2122,6 +2149,18 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &453241707
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 453241701}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b196a70265ebb5540876bb9daebff27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.ButtonSound
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
@@ -2819,6 +2858,7 @@ GameObject:
   - component: {fileID: 547617219}
   - component: {fileID: 547617218}
   - component: {fileID: 547617217}
+  - component: {fileID: 547617220}
   m_Layer: 5
   m_Name: SellAsIsButton
   m_TagString: Untagged
@@ -2928,6 +2968,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 547617215}
   m_CullTransparentMesh: 1
+--- !u!114 &547617220
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 547617215}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b196a70265ebb5540876bb9daebff27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.ButtonSound
 --- !u!1 &568131781
 GameObject:
   m_ObjectHideFlags: 0
@@ -3295,6 +3347,7 @@ GameObject:
   - component: {fileID: 681719734}
   - component: {fileID: 681719737}
   - component: {fileID: 681719736}
+  - component: {fileID: 681719738}
   m_Layer: 5
   m_Name: SparkCard
   m_TagString: Untagged
@@ -3417,6 +3470,18 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &681719738
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 681719732}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b196a70265ebb5540876bb9daebff27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.ButtonSound
 --- !u!1 &688956614
 GameObject:
   m_ObjectHideFlags: 0
@@ -3583,6 +3648,7 @@ GameObject:
   - component: {fileID: 704393816}
   - component: {fileID: 704393815}
   - component: {fileID: 704393817}
+  - component: {fileID: 704393818}
   m_Layer: 5
   m_Name: BackgroundCarLeft
   m_TagString: Untagged
@@ -3691,6 +3757,18 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &704393818
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 704393813}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b196a70265ebb5540876bb9daebff27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.ButtonSound
 --- !u!1 &721238969
 GameObject:
   m_ObjectHideFlags: 0
@@ -4405,7 +4483,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1591676536836753631, guid: 86c1bedec0e19c84596b7f7b39fe3eb3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 806767116}
   m_SourcePrefab: {fileID: 100100000, guid: 86c1bedec0e19c84596b7f7b39fe3eb3, type: 3}
 --- !u!224 &806767113 stripped
 RectTransform:
@@ -4423,6 +4504,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4b18a1761f3ca946948e904511b5a20, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.UpgradeCardUI
+--- !u!1 &806767115 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1591676536836753631, guid: 86c1bedec0e19c84596b7f7b39fe3eb3, type: 3}
+  m_PrefabInstance: {fileID: 806767112}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &806767116
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 806767115}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b196a70265ebb5540876bb9daebff27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.ButtonSound
 --- !u!1 &806829128
 GameObject:
   m_ObjectHideFlags: 0
@@ -4510,6 +4608,7 @@ GameObject:
   - component: {fileID: 809736060}
   - component: {fileID: 809736059}
   - component: {fileID: 809736058}
+  - component: {fileID: 809736061}
   m_Layer: 5
   m_Name: CompleteButton
   m_TagString: Untagged
@@ -4619,6 +4718,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 809736056}
   m_CullTransparentMesh: 1
+--- !u!114 &809736061
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 809736056}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b196a70265ebb5540876bb9daebff27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.ButtonSound
 --- !u!1 &837113071
 GameObject:
   m_ObjectHideFlags: 0
@@ -4945,6 +5056,7 @@ GameObject:
   - component: {fileID: 913624875}
   - component: {fileID: 913624874}
   - component: {fileID: 913624873}
+  - component: {fileID: 913624876}
   m_Layer: 5
   m_Name: CloseButton
   m_TagString: Untagged
@@ -5054,6 +5166,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 913624871}
   m_CullTransparentMesh: 1
+--- !u!114 &913624876
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 913624871}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b196a70265ebb5540876bb9daebff27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.ButtonSound
 --- !u!1 &928660256
 GameObject:
   m_ObjectHideFlags: 0
@@ -5474,6 +5598,7 @@ GameObject:
   - component: {fileID: 1020102489}
   - component: {fileID: 1020102492}
   - component: {fileID: 1020102491}
+  - component: {fileID: 1020102493}
   m_Layer: 5
   m_Name: TransmissionCard
   m_TagString: Untagged
@@ -5596,6 +5721,18 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1020102493
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1020102487}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b196a70265ebb5540876bb9daebff27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.ButtonSound
 --- !u!1 &1034170605
 GameObject:
   m_ObjectHideFlags: 0
@@ -5608,6 +5745,7 @@ GameObject:
   - component: {fileID: 1034170609}
   - component: {fileID: 1034170608}
   - component: {fileID: 1034170607}
+  - component: {fileID: 1034170610}
   m_Layer: 5
   m_Name: DiagnoseButton
   m_TagString: Untagged
@@ -5717,6 +5855,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1034170605}
   m_CullTransparentMesh: 1
+--- !u!114 &1034170610
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1034170605}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b196a70265ebb5540876bb9daebff27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.ButtonSound
 --- !u!1 &1054944970
 GameObject:
   m_ObjectHideFlags: 0
@@ -5999,7 +6149,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1591676536836753631, guid: 86c1bedec0e19c84596b7f7b39fe3eb3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1071090840}
   m_SourcePrefab: {fileID: 100100000, guid: 86c1bedec0e19c84596b7f7b39fe3eb3, type: 3}
 --- !u!224 &1071090837 stripped
 RectTransform:
@@ -6017,6 +6170,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4b18a1761f3ca946948e904511b5a20, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.UpgradeCardUI
+--- !u!1 &1071090839 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1591676536836753631, guid: 86c1bedec0e19c84596b7f7b39fe3eb3, type: 3}
+  m_PrefabInstance: {fileID: 1071090836}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1071090840
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1071090839}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b196a70265ebb5540876bb9daebff27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.ButtonSound
 --- !u!1 &1075189709
 GameObject:
   m_ObjectHideFlags: 0
@@ -6855,6 +7025,7 @@ GameObject:
   - component: {fileID: 1181889054}
   - component: {fileID: 1181889057}
   - component: {fileID: 1181889056}
+  - component: {fileID: 1181889058}
   m_Layer: 5
   m_Name: RustCard
   m_TagString: Untagged
@@ -6977,6 +7148,18 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &1181889058
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1181889052}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b196a70265ebb5540876bb9daebff27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.ButtonSound
 --- !u!1 &1191745685
 GameObject:
   m_ObjectHideFlags: 0
@@ -7263,6 +7446,7 @@ GameObject:
   - component: {fileID: 1227921873}
   - component: {fileID: 1227921872}
   - component: {fileID: 1227921871}
+  - component: {fileID: 1227921874}
   m_Layer: 5
   m_Name: CloseButton
   m_TagString: Untagged
@@ -7372,6 +7556,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1227921869}
   m_CullTransparentMesh: 1
+--- !u!114 &1227921874
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1227921869}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b196a70265ebb5540876bb9daebff27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.ButtonSound
 --- !u!1 &1229765939
 GameObject:
   m_ObjectHideFlags: 0
@@ -8428,6 +8624,7 @@ GameObject:
   - component: {fileID: 1470819672}
   - component: {fileID: 1470819675}
   - component: {fileID: 1470819674}
+  - component: {fileID: 1470819676}
   m_Layer: 5
   m_Name: WheelCard
   m_TagString: Untagged
@@ -8550,6 +8747,18 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &1470819676
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1470819670}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b196a70265ebb5540876bb9daebff27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.ButtonSound
 --- !u!1 &1472432188
 GameObject:
   m_ObjectHideFlags: 0
@@ -8688,6 +8897,7 @@ GameObject:
   - component: {fileID: 1472551912}
   - component: {fileID: 1472551913}
   - component: {fileID: 1472551914}
+  - component: {fileID: 1472551915}
   m_Layer: 5
   m_Name: GarageView
   m_TagString: Untagged
@@ -8811,6 +9021,18 @@ MonoBehaviour:
   smokeEffect: {fileID: 1496415392}
   carRoot: {fileID: 207980346}
   smokeYOffset: 180
+--- !u!114 &1472551915
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1472551910}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b196a70265ebb5540876bb9daebff27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.ButtonSound
 --- !u!1 &1478872558
 GameObject:
   m_ObjectHideFlags: 0
@@ -9391,6 +9613,7 @@ GameObject:
   - component: {fileID: 1609440759}
   - component: {fileID: 1609440758}
   - component: {fileID: 1609440757}
+  - component: {fileID: 1609440760}
   m_Layer: 5
   m_Name: CloseButton
   m_TagString: Untagged
@@ -9500,6 +9723,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1609440755}
   m_CullTransparentMesh: 1
+--- !u!114 &1609440760
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1609440755}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b196a70265ebb5540876bb9daebff27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.ButtonSound
 --- !u!1 &1625356504
 GameObject:
   m_ObjectHideFlags: 0
@@ -9867,6 +10102,7 @@ GameObject:
   - component: {fileID: 1658534473}
   - component: {fileID: 1658534472}
   - component: {fileID: 1658534471}
+  - component: {fileID: 1658534474}
   m_Layer: 5
   m_Name: ShopButton
   m_TagString: Untagged
@@ -9988,6 +10224,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1658534469}
   m_CullTransparentMesh: 1
+--- !u!114 &1658534474
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1658534469}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b196a70265ebb5540876bb9daebff27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.ButtonSound
 --- !u!1 &1703725391
 GameObject:
   m_ObjectHideFlags: 0
@@ -10482,6 +10730,53 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1757016111}
   m_CullTransparentMesh: 1
+--- !u!1 &1772308384
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1772308386}
+  - component: {fileID: 1772308385}
+  m_Layer: 0
+  m_Name: AdManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1772308385
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1772308384}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 39bc5d7d9639bac4e8d57e9d81d54244, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.Core.AdManager
+  rewardedMoney: 100
+  cooldown: 30
+  logCallbacks: 1
+--- !u!4 &1772308386
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1772308384}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 320.7845, y: 170.46042, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1773410570
 GameObject:
   m_ObjectHideFlags: 0
@@ -11164,6 +11459,7 @@ GameObject:
   - component: {fileID: 1839603720}
   - component: {fileID: 1839603719}
   - component: {fileID: 1839603718}
+  - component: {fileID: 1839603721}
   m_Layer: 5
   m_Name: CloseButton
   m_TagString: Untagged
@@ -11273,6 +11569,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1839603716}
   m_CullTransparentMesh: 1
+--- !u!114 &1839603721
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1839603716}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b196a70265ebb5540876bb9daebff27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.ButtonSound
 --- !u!1 &1873356529
 GameObject:
   m_ObjectHideFlags: 0
@@ -11420,6 +11728,7 @@ GameObject:
   - component: {fileID: 1875040163}
   - component: {fileID: 1875040162}
   - component: {fileID: 1875040161}
+  - component: {fileID: 1875040164}
   m_Layer: 5
   m_Name: CollectionButton
   m_TagString: Untagged
@@ -11541,6 +11850,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1875040159}
   m_CullTransparentMesh: 1
+--- !u!114 &1875040164
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1875040159}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b196a70265ebb5540876bb9daebff27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.ButtonSound
 --- !u!1 &1879693889
 GameObject:
   m_ObjectHideFlags: 0
@@ -11925,6 +12246,7 @@ RectTransform:
   - {fileID: 779259059}
   - {fileID: 1472432189}
   - {fileID: 1272158319}
+  - {fileID: 1966141730}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -11980,6 +12302,7 @@ GameObject:
   - component: {fileID: 1919772067}
   - component: {fileID: 1919772066}
   - component: {fileID: 1919772065}
+  - component: {fileID: 1919772068}
   m_Layer: 5
   m_Name: OpenShopButton
   m_TagString: Untagged
@@ -12089,6 +12412,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1919772063}
   m_CullTransparentMesh: 1
+--- !u!114 &1919772068
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1919772063}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b196a70265ebb5540876bb9daebff27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.ButtonSound
 --- !u!1 &1920872620
 GameObject:
   m_ObjectHideFlags: 0
@@ -12489,6 +12824,154 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1943784799}
   m_CullTransparentMesh: 1
+--- !u!1 &1966141729
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1966141730}
+  - component: {fileID: 1966141733}
+  - component: {fileID: 1966141732}
+  - component: {fileID: 1966141731}
+  - component: {fileID: 1966141734}
+  m_Layer: 5
+  m_Name: AdMoneyButton
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1966141730
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1966141729}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1999214810}
+  m_Father: {fileID: 1917679540}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 1, y: 0}
+  m_AnchorMax: {x: 1, y: 0}
+  m_AnchoredPosition: {x: -160, y: 80}
+  m_SizeDelta: {x: 240, y: 60}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1966141731
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1966141729}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+  m_Navigation:
+    m_Mode: 3
+    m_WrapAround: 0
+    m_SelectOnUp: {fileID: 0}
+    m_SelectOnDown: {fileID: 0}
+    m_SelectOnLeft: {fileID: 0}
+    m_SelectOnRight: {fileID: 0}
+  m_Transition: 1
+  m_Colors:
+    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
+    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
+    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+    m_ColorMultiplier: 1
+    m_FadeDuration: 0.1
+  m_SpriteState:
+    m_HighlightedSprite: {fileID: 0}
+    m_PressedSprite: {fileID: 0}
+    m_SelectedSprite: {fileID: 0}
+    m_DisabledSprite: {fileID: 0}
+  m_AnimationTriggers:
+    m_NormalTrigger: Normal
+    m_HighlightedTrigger: Highlighted
+    m_PressedTrigger: Pressed
+    m_SelectedTrigger: Selected
+    m_DisabledTrigger: Disabled
+  m_Interactable: 1
+  m_TargetGraphic: {fileID: 1966141732}
+  m_OnClick:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1772308385}
+        m_TargetAssemblyTypeName: AutoMechanic.Core.AdManager, Assembly-CSharp
+        m_MethodName: ShowRewardedForMoney
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &1966141732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1966141729}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
+  m_Type: 1
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &1966141733
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1966141729}
+  m_CullTransparentMesh: 1
+--- !u!114 &1966141734
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1966141729}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fa8af9f268c45746be5800f68e112b5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.AdButtonUI
+  button: {fileID: 1966141731}
+  label: {fileID: 1999214811}
 --- !u!1 &1975478470
 GameObject:
   m_ObjectHideFlags: 0
@@ -12596,6 +13079,143 @@ CanvasRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1975478470}
+  m_CullTransparentMesh: 1
+--- !u!1 &1999214809
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1999214810}
+  - component: {fileID: 1999214812}
+  - component: {fileID: 1999214811}
+  m_Layer: 5
+  m_Name: Text (TMP)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1999214810
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1999214809}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1966141730}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1999214811
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1999214809}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_text: Button
+  m_isRightToLeft: 0
+  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontSharedMaterials: []
+  m_fontMaterial: {fileID: 0}
+  m_fontMaterials: []
+  m_fontColor32:
+    serializedVersion: 2
+    rgba: 4281479730
+  m_fontColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
+  m_enableVertexGradient: 0
+  m_colorMode: 3
+  m_fontColorGradient:
+    topLeft: {r: 1, g: 1, b: 1, a: 1}
+    topRight: {r: 1, g: 1, b: 1, a: 1}
+    bottomLeft: {r: 1, g: 1, b: 1, a: 1}
+    bottomRight: {r: 1, g: 1, b: 1, a: 1}
+  m_fontColorGradientPreset: {fileID: 0}
+  m_spriteAsset: {fileID: 0}
+  m_tintAllSprites: 0
+  m_StyleSheet: {fileID: 0}
+  m_TextStyleHashCode: -1183493901
+  m_overrideHtmlColors: 0
+  m_faceColor:
+    serializedVersion: 2
+    rgba: 4294967295
+  m_fontSize: 24
+  m_fontSizeBase: 24
+  m_fontWeight: 400
+  m_enableAutoSizing: 0
+  m_fontSizeMin: 18
+  m_fontSizeMax: 72
+  m_fontStyle: 0
+  m_HorizontalAlignment: 2
+  m_VerticalAlignment: 512
+  m_textAlignment: 65535
+  m_characterSpacing: 0
+  m_characterHorizontalScale: 1
+  m_wordSpacing: 0
+  m_lineSpacing: 0
+  m_lineSpacingMax: 0
+  m_paragraphSpacing: 0
+  m_charWidthMaxAdj: 0
+  m_TextWrappingMode: 1
+  m_wordWrappingRatios: 0.4
+  m_overflowMode: 0
+  m_linkedTextComponent: {fileID: 0}
+  parentLinkedComponent: {fileID: 0}
+  m_enableKerning: 0
+  m_ActiveFontFeatures: 6e72656b
+  m_enableExtraPadding: 0
+  checkPaddingRequired: 0
+  m_isRichText: 1
+  m_EmojiFallbackSupport: 1
+  m_parseCtrlCharacters: 1
+  m_isOrthographic: 1
+  m_isCullingEnabled: 0
+  m_horizontalMapping: 0
+  m_verticalMapping: 0
+  m_uvLineOffset: 0
+  m_geometrySortingOrder: 0
+  m_IsTextObjectScaleStatic: 0
+  m_VertexBufferAutoSizeReduction: 0
+  m_useMaxVisibleDescender: 1
+  m_pageToDisplay: 1
+  m_margin: {x: 0, y: 0, z: 0, w: 0}
+  m_isUsingLegacyAnimationComponent: 0
+  m_isVolumetricText: 0
+  m_hasFontAssetChanged: 0
+  m_baseMaterial: {fileID: 0}
+  m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!222 &1999214812
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1999214809}
   m_CullTransparentMesh: 1
 --- !u!1 &2016590627
 GameObject:
@@ -13151,7 +13771,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1591676536836753631, guid: 86c1bedec0e19c84596b7f7b39fe3eb3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2067744149}
   m_SourcePrefab: {fileID: 100100000, guid: 86c1bedec0e19c84596b7f7b39fe3eb3, type: 3}
 --- !u!224 &2067744146 stripped
 RectTransform:
@@ -13169,6 +13792,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4b18a1761f3ca946948e904511b5a20, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.UpgradeCardUI
+--- !u!1 &2067744148 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1591676536836753631, guid: 86c1bedec0e19c84596b7f7b39fe3eb3, type: 3}
+  m_PrefabInstance: {fileID: 2067744145}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2067744149
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2067744148}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b196a70265ebb5540876bb9daebff27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.ButtonSound
 --- !u!1 &2087438267
 GameObject:
   m_ObjectHideFlags: 0
@@ -13181,6 +13821,7 @@ GameObject:
   - component: {fileID: 2087438271}
   - component: {fileID: 2087438270}
   - component: {fileID: 2087438269}
+  - component: {fileID: 2087438272}
   m_Layer: 5
   m_Name: CloseButton
   m_TagString: Untagged
@@ -13302,6 +13943,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2087438267}
   m_CullTransparentMesh: 1
+--- !u!114 &2087438272
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2087438267}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b196a70265ebb5540876bb9daebff27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.ButtonSound
 --- !u!1 &2099606418
 GameObject:
   m_ObjectHideFlags: 0
@@ -13585,6 +14238,7 @@ GameObject:
   - component: {fileID: 2140602992}
   - component: {fileID: 2140602995}
   - component: {fileID: 2140602994}
+  - component: {fileID: 2140602996}
   m_Layer: 5
   m_Name: SmokeCard
   m_TagString: Untagged
@@ -13707,6 +14361,18 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &2140602996
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2140602990}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b196a70265ebb5540876bb9daebff27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMechanic.UI.ButtonSound
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -13726,3 +14392,4 @@ SceneRoots:
   - {fileID: 1359814527}
   - {fileID: 1079816436}
   - {fileID: 1811329512}
+  - {fileID: 1772308386}

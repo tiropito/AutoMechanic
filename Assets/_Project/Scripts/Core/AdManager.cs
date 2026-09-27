@@ -8,22 +8,21 @@ using BananaParty.YandexGames;
 namespace AutoMechanic.Core
 {
     /// <summary>
-    /// Реклама через Yandex Games SDK (BananaParty).
-    /// Rewarded Video — за просмотр даём деньги.
+    /// Реклама через Yandex Games SDK.
+    /// Rewarded Video — за просмотр даём $100.
+    /// Останавливает звук игры на время показа.
     /// </summary>
     public class AdManager : MonoBehaviour
     {
         public static AdManager Instance { get; private set; }
 
         [Header("Награды")]
-        [Tooltip("Сколько денег за просмотр рекламы")]
         [SerializeField] private int rewardedMoney = 100;
 
         [Tooltip("Кулдаун между рекламами (сек)")]
-        [SerializeField] private float cooldown = 60f;
+        [SerializeField] private float cooldown = 30f;
 
         [Header("Отладка")]
-        [Tooltip("Логировать колбэки SDK (только WebGL)")]
         [SerializeField] private bool logCallbacks = true;
 
         private float _lastShowTime = -999f;
@@ -42,27 +41,24 @@ namespace AutoMechanic.Core
             DontDestroyOnLoad(gameObject);
         }
 
-        /// <summary>Показать рекламу за деньги.</summary>
         public void ShowRewardedForMoney()
         {
             if (!IsReady)
             {
-                Debug.Log($"[AdManager] Кулдаун: осталось {CooldownLeft:F0} сек");
+                Debug.Log($"[AdManager] Кулдаун: {CooldownLeft:F0} сек");
                 return;
             }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-            // На localhost SDK не инициализирован — не дёргаем API, чтобы не было рекурсии
             if (YandexSDKInitializer.Instance == null || !YandexSDKInitializer.Instance.IsInitialized)
             {
-                Debug.LogWarning("[AdManager] SDK не готов (localhost?) — выдаём награду как fallback");
+                Debug.LogWarning("[AdManager] SDK не готов — выдаём награду как fallback");
                 GiveReward();
                 return;
             }
-
             ShowAdWebGL();
 #else
-            Debug.Log("[AdManager] Не WebGL — выдаём награду сразу (тестовый режим)");
+            Debug.Log("[AdManager] Не WebGL — выдаём награду сразу");
             GiveReward();
 #endif
         }
@@ -78,17 +74,18 @@ namespace AutoMechanic.Core
             VideoAd.Show(
                 onOpenCallback: () =>
                 {
-                    Debug.Log("[AdManager] Реклама открыта");
+                    Debug.Log("[AdManager] Реклама открыта — пауза звука");
+                    PauseAllAudio();
                 },
                 onRewardedCallback: () =>
                 {
-                    Debug.Log("[AdManager] Игрок досмотрел — выдаём награду");
+                    Debug.Log("[AdManager] Досмотрено — награда");
                     GiveReward();
                 },
                 onCloseCallback: () =>
                 {
                     Debug.Log("[AdManager] Реклама закрыта");
-                    // Если награду не дали (не досмотрел) — обновляем кулдаун без награды
+                    ResumeAllAudio();
                     if (Time.time - _lastShowTime > 1f)
                     {
                         _lastShowTime = Time.time;
@@ -97,7 +94,8 @@ namespace AutoMechanic.Core
                 },
                 onErrorCallback: (error) =>
                 {
-                    Debug.LogError($"[AdManager] Ошибка рекламы: {error}");
+                    Debug.LogError($"[AdManager] Ошибка: {error}");
+                    ResumeAllAudio();
                     _lastShowTime = Time.time;
                     OnRewardedFailed?.Invoke();
                 }
@@ -112,16 +110,31 @@ namespace AutoMechanic.Core
             if (EconomyManager.Instance != null)
                 EconomyManager.Instance.Add(rewardedMoney);
 
-            Debug.Log($"[AdManager] +${rewardedMoney} за рекламу");
+            Debug.Log($"[AdManager] +${rewardedMoney}");
             OnRewardedComplete?.Invoke();
         }
 
-        // ===== ТЕСТЫ (ПКМ по компоненту) =====
+        // ==================== ЗВУК ====================
+
+        private void PauseAllAudio()
+        {
+            AudioListener.pause = true;
+            AudioListener.volume = 0f;
+        }
+
+        private void ResumeAllAudio()
+        {
+            AudioListener.pause = false;
+            AudioListener.volume = 1f;
+        }
+
+        // ==================== ТЕСТЫ ====================
+
         [ContextMenu("ТЕСТ: показать рекламу")]
         private void TestShow() => ShowRewardedForMoney();
 
         [ContextMenu("ТЕСТ: сбросить кулдаун")]
-        private void TestResetCooldown()
+        private void TestReset()
         {
             _lastShowTime = -999f;
             Debug.Log("[AdManager] Кулдаун сброшен");

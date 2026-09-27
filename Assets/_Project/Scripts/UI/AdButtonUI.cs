@@ -6,7 +6,7 @@ using AutoMechanic.Core;
 namespace AutoMechanic.UI
 {
     /// <summary>
-    /// Обновляет подпись на кнопке рекламы: «+$100 за рекламу» или «Ждите 45с».
+    /// Обновляет кнопку рекламы: активна / на кулдауне.
     /// </summary>
     public class AdButtonUI : MonoBehaviour
     {
