@@ -21,4 +21,4 @@ MonoBehaviour:
   rarity: 3
   buyPrice: 2300
   sellPercent: 60
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 763cb066125267245b6e6f9940c27de7, type: 3}

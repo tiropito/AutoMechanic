@@ -95,5 +95,5 @@ namespace AutoMechanic.UI
             var shop = FindObjectOfType<ShopPanelUI>(true);   // ← true
             if (shop != null) shop.Open();
         }
-    }
+    }   
 }

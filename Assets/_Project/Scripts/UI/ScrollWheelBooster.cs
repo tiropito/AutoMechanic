@@ -28,4 +28,4 @@ namespace AutoMechanic.UI
             _scrollRect.OnScroll(eventData);
         }
     }
-}
+}   
