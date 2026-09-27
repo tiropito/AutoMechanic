@@ -18,7 +18,6 @@ namespace AutoMechanic.Gameplay
             DontDestroyOnLoad(gameObject);
         }
 
-        /// <summary>Купить N деталей. Возвращает true при успехе.</summary>
         public bool TryBuy(PartData part, int amount = 1)
         {
             if (part == null || amount <= 0) return false;
@@ -38,6 +37,11 @@ namespace AutoMechanic.Gameplay
             if (!EconomyManager.Instance.Spend(totalCost))
             {
                 Debug.Log($"[ShopManager] Не хватает денег: нужно ${totalCost}, есть ${EconomyManager.Instance.Money}");
+
+                // Звук ошибки
+                if (AudioManager.Instance != null)
+                    AudioManager.Instance.PlayError();
+
                 return false;
             }
 
@@ -46,7 +50,6 @@ namespace AutoMechanic.Gameplay
             return true;
         }
 
-        /// <summary>Можно ли купить N деталей прямо сейчас.</summary>
         public bool CanAfford(PartData part, int amount, out int totalCost, out int currentMoney)
         {
             totalCost = part != null ? part.buyPrice * amount : 0;
@@ -54,13 +57,11 @@ namespace AutoMechanic.Gameplay
             return currentMoney >= totalCost;
         }
 
-        /// <summary>Текущий баланс игрока.</summary>
         public int GetCurrentMoney()
         {
             return EconomyManager.Instance != null ? EconomyManager.Instance.Money : 0;
         }
 
-        /// <summary>Цена покупки детали.</summary>
         public int GetBuyPrice(PartData part)
         {
             return part != null ? part.buyPrice : 0;

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using AutoMechanic.Data;
+using AutoMechanic.Core;
 
 namespace AutoMechanic.Gameplay
 {
@@ -102,6 +103,10 @@ namespace AutoMechanic.Gameplay
             slots[index].timeSinceEmpty = 0f;
             slots[index].refillDelay = UnityEngine.Random.Range(refillDelayMin, refillDelayMax);
             slots[index].bonusTimeLeft = slots[index].isBonus ? bonusTimeSeconds : 0f;
+
+            // Звук появления бонусной машины
+            if (slots[index].isBonus && AudioManager.Instance != null)
+                AudioManager.Instance.PlayBonus();
 
             OnSlotsChanged?.Invoke();
             Save();

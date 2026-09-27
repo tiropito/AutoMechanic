@@ -7,7 +7,6 @@ namespace AutoMechanic.Gameplay
 {
     /// <summary>
     /// Ремонт: ставит детали с таймером, завершает заказ, продаёт недоремонтированную машину.
-    /// Деньги приходят ТОЛЬКО при завершении заказа или продаже как есть.
     /// Защита от двойного клика через _lockedSessions.
     /// </summary>
     public class RepairManager : MonoBehaviour
@@ -37,7 +36,6 @@ namespace AutoMechanic.Gameplay
         [Tooltip("Минимальная сумма за завершённый заказ")]
         [SerializeField] private int minOrderReward = 50;
 
-        // Защита от двойного клика
         private readonly HashSet<int> _lockedSessions = new HashSet<int>();
 
         private void Awake()
@@ -81,6 +79,10 @@ namespace AutoMechanic.Gameplay
         private void CompleteInstall(int sessionIndex, BreakdownData breakdown)
         {
             Debug.Log($"[RepairManager] Установка «{breakdown.displayName}» завершена");
+
+            if (AudioManager.Instance != null)
+                AudioManager.Instance.PlayFix();
+
             if (DiagnosticManager.Instance != null)
                 DiagnosticManager.Instance.MarkFixed(sessionIndex, breakdown);
         }
@@ -224,7 +226,6 @@ namespace AutoMechanic.Gameplay
                 return false;
             }
 
-            // Защита от двойного клика
             if (_lockedSessions.Contains(sessionIndex))
             {
                 Debug.Log("[RepairManager] Сессия уже завершается");
@@ -252,7 +253,6 @@ namespace AutoMechanic.Gameplay
                 return false;
             }
 
-            // Лочим сессию — предотвращает повторный вызов
             _lockedSessions.Add(sessionIndex);
 
             int reward = CalculateOrderReward(session);
@@ -265,6 +265,10 @@ namespace AutoMechanic.Gameplay
 
             if (AutoMechanic.UI.ConfettiUI.Instance != null)
                 AutoMechanic.UI.ConfettiUI.Instance.Play(Vector2.zero);
+
+            // Звук кассы
+            if (AudioManager.Instance != null)
+                AudioManager.Instance.PlayCash();
 
             string bonusTag = session.car.isBonus ? " (бонус ⭐ ×2)" : "";
             Debug.Log($"[RepairManager] Заказ завершён: {session.car.displayName}, +${reward}{bonusTag}");
@@ -296,7 +300,6 @@ namespace AutoMechanic.Gameplay
         {
             if (GarageManager.Instance == null || EconomyManager.Instance == null) return false;
 
-            // Защита от двойного клика
             if (_lockedSessions.Contains(sessionIndex))
             {
                 Debug.Log("[RepairManager] Сессия уже завершается");
@@ -334,7 +337,10 @@ namespace AutoMechanic.Gameplay
             if (actualAmount != 0 && AutoMechanic.UI.MoneyFlyUI.Instance != null)
                 AutoMechanic.UI.MoneyFlyUI.Instance.ShowAmount(actualAmount);
 
-            // Лочим сессию
+            // Звук — только при положительной сумме
+            if (actualAmount > 0 && AudioManager.Instance != null)
+                AudioManager.Instance.PlayCash();
+
             _lockedSessions.Add(sessionIndex);
 
             var view = FindObjectOfType<AutoMechanic.UI.GarageView>();
@@ -374,7 +380,6 @@ namespace AutoMechanic.Gameplay
 
             int price = Mathf.RoundToInt(partsCost * sellAsIsRate);
 
-            // + диагностика окупается при 1+ починке
             if (DiagnosticManager.Instance != null && session.car != null)
                 price += DiagnosticManager.Instance.GetDiagnosisCost(session.car);
 
@@ -415,7 +420,6 @@ namespace AutoMechanic.Gameplay
             float profitRate = 1f + machineRate + rarityBonus;
             int reward = Mathf.RoundToInt(totalPartsCost * profitRate);
 
-            // + диагностика окупается при завершении
             int diagCost = 0;
             if (DiagnosticManager.Instance != null)
                 diagCost = DiagnosticManager.Instance.GetDiagnosisCost(session.car);
@@ -456,47 +460,5 @@ namespace AutoMechanic.Gameplay
 
         [ContextMenu("ТЕСТ: продать как есть сессию 0")]
         private void TestSellAsIs0() => TrySellAsIs(0);
-
-        [ContextMenu("ТЕСТ: показать экономику сессии 0")]
-        private void TestShowEconomics0()
-        {
-            if (GarageManager.Instance == null || GarageManager.Instance.Sessions.Count == 0)
-            {
-                Debug.Log("[RepairManager] Сессия 0 пуста");
-                return;
-            }
-
-            var session = GarageManager.Instance.Sessions[0];
-            int cost = 0;
-            PartRarity maxR = PartRarity.Common;
-
-            foreach (var bd in session.brokenDownList)
-            {
-                if (bd == null) continue;
-                cost += bd.GetPartsCost();
-                var r = bd.GetRarity();
-                if (r > maxR) maxR = r;
-            }
-
-            int mIdx = (int)session.car.rarity;
-            float mRate = (machineProfitRates != null && mIdx < machineProfitRates.Length)
-                ? machineProfitRates[mIdx] : 0.25f;
-            int rIdx = (int)maxR;
-            float rBonus = (breakdownRarityBonus != null && rIdx < breakdownRarityBonus.Length)
-                ? breakdownRarityBonus[rIdx] : 0f;
-
-            int reward = CalculateOrderReward(session);
-            int sellPrice = CalculateSellAsIsPrice(0);
-
-            var sb = new System.Text.StringBuilder("[RepairManager] Экономика сессии 0:\n");
-            sb.AppendLine($"  Машина: {session.car.displayName} [{session.car.rarity}]");
-            sb.AppendLine($"  Детали: ${cost}");
-            sb.AppendLine($"  Ставка машины: +{mRate * 100:F0}%");
-            sb.AppendLine($"  Бонус поломки: +{rBonus * 100:F0}%");
-            sb.AppendLine($"  Профит заказа: +${reward}");
-            sb.AppendLine($"  Продажа как есть: {(sellPrice >= 0 ? "+" : "")}${sellPrice}");
-            if (cost > 0) sb.AppendLine($"  Окупаемость: ×{(cost + reward) / (float)cost:F2}");
-            Debug.Log(sb.ToString());
-        }
     }
 }
