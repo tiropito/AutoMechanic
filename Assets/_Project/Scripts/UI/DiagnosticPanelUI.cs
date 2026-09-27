@@ -91,12 +91,14 @@ namespace AutoMechanic.UI
         private void OnCompleteClicked()
         {
             if (RepairManager.Instance == null) return;
+            if (completeButton != null) completeButton.interactable = false;
             RepairManager.Instance.TryCompleteOrder(GetCurrentIndex());
         }
 
         private void OnSellAsIsClicked()
         {
             if (RepairManager.Instance == null) return;
+            if (sellAsIsButton != null) sellAsIsButton.interactable = false;
             RepairManager.Instance.TrySellAsIs(GetCurrentIndex());
         }
 

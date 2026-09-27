@@ -8,6 +8,7 @@ namespace AutoMechanic.Gameplay
     /// <summary>
     /// Ремонт: ставит детали с таймером, завершает заказ, продаёт недоремонтированную машину.
     /// Деньги приходят ТОЛЬКО при завершении заказа или продаже как есть.
+    /// Защита от двойного клика через _lockedSessions.
     /// </summary>
     public class RepairManager : MonoBehaviour
     {
@@ -28,16 +29,16 @@ namespace AutoMechanic.Gameplay
         [Tooltip("Во сколько раз больше за бонусную машину")]
         [SerializeField] private int bonusMultiplier = 2;
 
-        [Header("Награда за завершение заказа")]
-        [Tooltip("Минимальная сумма за завершённый заказ (даже если поломки дешёвые)")]
+        [Header("Продажа недоремонтированной машины")]
+        [SerializeField] private float sellAsIsRate = 0.4f;
+        [SerializeField] private int sellAsIsNoRepairFee = 50;
+
+        [Header("Завершение заказа")]
+        [Tooltip("Минимальная сумма за завершённый заказ")]
         [SerializeField] private int minOrderReward = 50;
 
-        [Header("Продажа недоремонтированной машины")]
-        [Tooltip("Процент от стоимости установленных деталей, который получит игрок")]
-        [SerializeField] private float sellAsIsRate = 0.4f;
-
-        [Tooltip("Штраф за отказ от заказа без починки (0 поломок)")]
-        [SerializeField] private int sellAsIsNoRepairFee = 50;
+        // Защита от двойного клика
+        private readonly HashSet<int> _lockedSessions = new HashSet<int>();
 
         private void Awake()
         {
@@ -66,11 +67,7 @@ namespace AutoMechanic.Gameplay
                 for (int j = session.installingList.Count - 1; j >= 0; j--)
                 {
                     var timer = session.installingList[j];
-                    if (timer == null)
-                    {
-                        session.installingList.RemoveAt(j);
-                        continue;
-                    }
+                    if (timer == null) { session.installingList.RemoveAt(j); continue; }
 
                     if (Time.realtimeSinceStartup >= timer.endTime)
                     {
@@ -84,14 +81,12 @@ namespace AutoMechanic.Gameplay
         private void CompleteInstall(int sessionIndex, BreakdownData breakdown)
         {
             Debug.Log($"[RepairManager] Установка «{breakdown.displayName}» завершена");
-
             if (DiagnosticManager.Instance != null)
                 DiagnosticManager.Instance.MarkFixed(sessionIndex, breakdown);
         }
 
-        // ==================== ПОЧИНКА / УСТАНОВКА ====================
+        // ==================== ПОЧИНКА ====================
 
-        /// <summary>Ставит деталь. Деньги НЕ начисляются — только списываются из инвентаря.</summary>
         public bool TryRepair(int sessionIndex, BreakdownData breakdown)
         {
             var reason = GetRepairFailReason(sessionIndex, breakdown);
@@ -229,6 +224,13 @@ namespace AutoMechanic.Gameplay
                 return false;
             }
 
+            // Защита от двойного клика
+            if (_lockedSessions.Contains(sessionIndex))
+            {
+                Debug.Log("[RepairManager] Сессия уже завершается");
+                return false;
+            }
+
             var sessions = GarageManager.Instance.Sessions;
             if (sessionIndex < 0 || sessionIndex >= sessions.Count)
             {
@@ -250,50 +252,39 @@ namespace AutoMechanic.Gameplay
                 return false;
             }
 
-            // ЕДИНСТВЕННЫЙ источник дохода — здесь
+            // Лочим сессию — предотвращает повторный вызов
+            _lockedSessions.Add(sessionIndex);
+
             int reward = CalculateOrderReward(session);
 
             if (EconomyManager.Instance != null)
                 EconomyManager.Instance.Add(reward);
 
-            // Летящий текст +$X
             if (AutoMechanic.UI.MoneyFlyUI.Instance != null)
                 AutoMechanic.UI.MoneyFlyUI.Instance.ShowReward(reward);
 
-            // Конфетти при завершении
             if (AutoMechanic.UI.ConfettiUI.Instance != null)
-            {
-                var origin = AutoMechanic.UI.MoneyFlyUI.Instance != null
-                    ? AutoMechanic.UI.MoneyFlyUI.Instance.transform.position
-                    : Vector3.zero;
-                AutoMechanic.UI.ConfettiUI.Instance.Play(new Vector2(0, 0));
-            }
+                AutoMechanic.UI.ConfettiUI.Instance.Play(Vector2.zero);
 
             string bonusTag = session.car.isBonus ? " (бонус ⭐ ×2)" : "";
             Debug.Log($"[RepairManager] Заказ завершён: {session.car.displayName}, +${reward}{bonusTag}");
 
             if (CollectionManager.Instance != null)
-{
-            bool wasRepaired = CollectionManager.Instance.IsRepaired(session.car);
-            CollectionManager.Instance.MarkRepaired(session.car);
+                CollectionManager.Instance.MarkRepaired(session.car);
 
-            // Показываем попап только для НОВОЙ машины
-            if (!wasRepaired && AutoMechanic.UI.NewCarPopupUI.Instance != null)
-                AutoMechanic.UI.NewCarPopupUI.Instance.Show(session.car);
-        }
-
-            // Анимация отъезда + потом убираем сессию
             var view = FindObjectOfType<AutoMechanic.UI.GarageView>();
             if (view != null)
             {
                 view.PlayCarLeaveAnimation(() =>
                 {
                     GarageManager.Instance.CompleteRepair(sessionIndex);
+                    _lockedSessions.Remove(sessionIndex);
                 });
             }
             else
             {
                 GarageManager.Instance.CompleteRepair(sessionIndex);
+                _lockedSessions.Remove(sessionIndex);
             }
 
             return true;
@@ -304,6 +295,13 @@ namespace AutoMechanic.Gameplay
         public bool TrySellAsIs(int sessionIndex)
         {
             if (GarageManager.Instance == null || EconomyManager.Instance == null) return false;
+
+            // Защита от двойного клика
+            if (_lockedSessions.Contains(sessionIndex))
+            {
+                Debug.Log("[RepairManager] Сессия уже завершается");
+                return false;
+            }
 
             var sessions = GarageManager.Instance.Sessions;
             if (sessionIndex < 0 || sessionIndex >= sessions.Count) return false;
@@ -333,22 +331,25 @@ namespace AutoMechanic.Gameplay
                 Debug.Log($"[RepairManager] Продано как есть: {session.car.displayName}, +$0");
             }
 
-            // Летящий текст (или +$X, или -$X)
             if (actualAmount != 0 && AutoMechanic.UI.MoneyFlyUI.Instance != null)
                 AutoMechanic.UI.MoneyFlyUI.Instance.ShowAmount(actualAmount);
 
-            // Анимация отъезда машины + освобождение поста
+            // Лочим сессию
+            _lockedSessions.Add(sessionIndex);
+
             var view = FindObjectOfType<AutoMechanic.UI.GarageView>();
             if (view != null)
             {
                 view.PlayCarLeaveAnimation(() =>
                 {
                     GarageManager.Instance.CompleteRepair(sessionIndex);
+                    _lockedSessions.Remove(sessionIndex);
                 });
             }
             else
             {
                 GarageManager.Instance.CompleteRepair(sessionIndex);
+                _lockedSessions.Remove(sessionIndex);
             }
 
             return true;
@@ -362,10 +363,7 @@ namespace AutoMechanic.Gameplay
 
             var session = sessions[sessionIndex];
 
-            // Считаем ТОЛЬКО завершённые установки
             int fixedCount = session.fixedList != null ? session.fixedList.Count : 0;
-
-            // 0 починено → штраф (диагностика НЕ окупается)
             if (fixedCount == 0)
                 return -sellAsIsNoRepairFee;
 
@@ -376,7 +374,7 @@ namespace AutoMechanic.Gameplay
 
             int price = Mathf.RoundToInt(partsCost * sellAsIsRate);
 
-            // + Возврат стоимости диагностики, раз что-то уже починено
+            // + диагностика окупается при 1+ починке
             if (DiagnosticManager.Instance != null && session.car != null)
                 price += DiagnosticManager.Instance.GetDiagnosisCost(session.car);
 
@@ -393,7 +391,6 @@ namespace AutoMechanic.Gameplay
         {
             if (session == null || session.car == null) return minOrderReward;
 
-            // Стоимость всех деталей
             int totalPartsCost = 0;
             PartRarity maxBreakdownRarity = PartRarity.Common;
 
@@ -405,13 +402,11 @@ namespace AutoMechanic.Gameplay
                 if (r > maxBreakdownRarity) maxBreakdownRarity = r;
             }
 
-            // Ставка машины
             float machineRate = 0.25f;
             int mIdx = (int)session.car.rarity;
             if (machineProfitRates != null && mIdx >= 0 && mIdx < machineProfitRates.Length)
                 machineRate = machineProfitRates[mIdx];
 
-            // Бонус за редкость поломки
             float rarityBonus = 0f;
             int rIdx = (int)maxBreakdownRarity;
             if (breakdownRarityBonus != null && rIdx >= 0 && rIdx < breakdownRarityBonus.Length)
@@ -420,19 +415,16 @@ namespace AutoMechanic.Gameplay
             float profitRate = 1f + machineRate + rarityBonus;
             int reward = Mathf.RoundToInt(totalPartsCost * profitRate);
 
-            // + Возврат стоимости диагностики — она окупается при завершении
+            // + диагностика окупается при завершении
             int diagCost = 0;
             if (DiagnosticManager.Instance != null)
                 diagCost = DiagnosticManager.Instance.GetDiagnosisCost(session.car);
             reward += diagCost;
 
-            // Минимум за заказ
             reward = Mathf.Max(reward, minOrderReward);
 
-            // Бонусная машина
             if (session.car.isBonus) reward *= bonusMultiplier;
 
-            // Красивое округление
             if (reward >= 10000) reward = Mathf.RoundToInt(reward / 1000f) * 1000;
             else if (reward >= 1000) reward = Mathf.RoundToInt(reward / 100f) * 100;
             else if (reward >= 100) reward = Mathf.RoundToInt(reward / 10f) * 10;

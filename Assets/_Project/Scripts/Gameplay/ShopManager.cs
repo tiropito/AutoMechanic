@@ -6,7 +6,6 @@ namespace AutoMechanic.Gameplay
 {
     /// <summary>
     /// Магазин: покупка деталей за деньги.
-    /// Работает напрямую с EconomyManager и PartData — без рефлексии.
     /// </summary>
     public class ShopManager : MonoBehaviour
     {
@@ -23,6 +22,7 @@ namespace AutoMechanic.Gameplay
         public bool TryBuy(PartData part, int amount = 1)
         {
             if (part == null || amount <= 0) return false;
+
             if (InventoryManager.Instance == null)
             {
                 Debug.LogError("[ShopManager] Нет InventoryManager");
@@ -85,7 +85,7 @@ namespace AutoMechanic.Gameplay
             var p = InventoryManager.Instance.PartDatabase.GetById("part_piston");
             if (p == null)
             {
-                Debug.LogError("[ShopManager] Деталь 'part_piston' не найдена в базе");
+                Debug.LogError("[ShopManager] Деталь 'part_piston' не найдена");
                 return;
             }
             TryBuy(p, 1);

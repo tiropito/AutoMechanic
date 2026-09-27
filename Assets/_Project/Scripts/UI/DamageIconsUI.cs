@@ -19,6 +19,7 @@ namespace AutoMechanic.UI
         [SerializeField] private Button wheelCard;
         [SerializeField] private Button brakesCard;
         [SerializeField] private Button rustCard;
+        [SerializeField] private Button transmissionCard;
 
         [Header("CanvasGroup каждой карточки")]
         [SerializeField] private CanvasGroup smokeGroup;
@@ -26,6 +27,7 @@ namespace AutoMechanic.UI
         [SerializeField] private CanvasGroup wheelGroup;
         [SerializeField] private CanvasGroup brakesGroup;
         [SerializeField] private CanvasGroup rustGroup;
+        [SerializeField] private CanvasGroup transmissionGroup;
 
         [Header("Скрытие при открытии меню")]
         [Tooltip("CanvasGroup на самой панели — скрывается, когда любое полноэкранное меню открыто")]
@@ -146,6 +148,11 @@ namespace AutoMechanic.UI
                 rustCard.onClick.RemoveAllListeners();
                 rustCard.onClick.AddListener(() => OnIconClicked(BreakdownVisual.Rust));
             }
+            if (transmissionCard != null)
+            {
+                transmissionCard.onClick.RemoveAllListeners();
+                transmissionCard.onClick.AddListener(() => OnIconClicked(BreakdownVisual.Jerk));
+            }
         }
 
         private void Unsubscribe()
@@ -184,10 +191,12 @@ namespace AutoMechanic.UI
             bool wheel = HasUnfixed(idx, BreakdownVisual.Flat);
             bool brakes = HasUnfixed(idx, BreakdownVisual.Squeak);
             bool rust = HasUnfixed(idx, BreakdownVisual.Rust);
+            bool trans = HasUnfixed(idx, BreakdownVisual.Jerk);
 
             SetCard(smokeCard, smokeGroup, smoke);
             SetCard(sparkCard, sparkGroup, spark);
             SetCard(wheelCard, wheelGroup, wheel);
+            SetCard(transmissionCard, transmissionGroup, trans);
             SetCard(brakesCard, brakesGroup, brakes);
             SetCard(rustCard, rustGroup, rust);
         }
@@ -223,6 +232,7 @@ namespace AutoMechanic.UI
             if (smokeCard != null) smokeCard.gameObject.SetActive(false);
             if (sparkCard != null) sparkCard.gameObject.SetActive(false);
             if (wheelCard != null) wheelCard.gameObject.SetActive(false);
+            if (transmissionCard != null) transmissionCard.gameObject.SetActive(false);
             if (brakesCard != null) brakesCard.gameObject.SetActive(false);
             if (rustCard != null) rustCard.gameObject.SetActive(false);
         }
