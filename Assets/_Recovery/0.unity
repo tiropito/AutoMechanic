@@ -1969,7 +1969,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 106753735}
   m_HandleRect: {fileID: 106753734}
   m_Direction: 2
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -3190,7 +3190,7 @@ MonoBehaviour:
   - 0.15
   - 0.3
   bonusMultiplier: 2
-  sellAsIsRate: 0.5
+  sellAsIsRate: 0.4
   sellAsIsNoRepairFee: 50
   minOrderReward: 50
 --- !u!4 &670449554
@@ -11026,7 +11026,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 291932902}
   m_HandleRect: {fileID: 291932901}
   m_Direction: 2
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -12782,7 +12782,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1729797740}
   m_HandleRect: {fileID: 1729797739}
   m_Direction: 2
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:

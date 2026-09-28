@@ -77,17 +77,32 @@ namespace AutoMechanic.Gameplay
             return true;
         }
 
-        /// <summary>Заранее назначает поломки. Игрок их не видит, но эффекты показываются.</summary>
+        /// <summary>Заранее назначает поломки. Только те, что соответствуют редкости машины.</summary>
         private void GenerateBreakdowns(RepairSession session)
         {
             if (session == null || session.car == null) return;
             if (session.car.possibleBreakdowns == null || session.car.possibleBreakdowns.Length == 0) return;
 
+            // Максимальная редкость поломки для этой машины
+            PartRarity maxAllowed = GetMaxBreakdownRarity(session.car.rarity);
+
             var pool = new List<BreakdownData>();
             foreach (var bd in session.car.possibleBreakdowns)
-                if (bd != null) pool.Add(bd);
+            {
+                if (bd == null) continue;
 
-            if (pool.Count == 0) return;
+                // Пропускаем поломки, которые слишком редкие для этой машины
+                var bdRarity = bd.GetRarity();
+                if (bdRarity > maxAllowed) continue;
+
+                pool.Add(bd);
+            }
+
+            if (pool.Count == 0)
+            {
+                Debug.LogWarning($"[GarageManager] У машины {session.car.id} нет подходящих поломок (max rarity: {maxAllowed})");
+                return;
+            }
 
             int wanted = UnityEngine.Random.Range(1, 4);
             int count = Mathf.Clamp(wanted, 1, pool.Count);
@@ -101,7 +116,21 @@ namespace AutoMechanic.Gameplay
             for (int i = 0; i < count; i++)
                 session.brokenDownList.Add(pool[i]);
 
-            Debug.Log($"[GarageManager] Назначено поломок (заранее): {count}");
+            Debug.Log($"[GarageManager] Назначено поломок (заранее): {count} (max rarity: {maxAllowed})");
+        }
+
+        /// <summary>Максимальная редкость поломки по тиру машины.</summary>
+        private PartRarity GetMaxBreakdownRarity(CarRarity machineRarity)
+        {
+            switch (machineRarity)
+            {
+                case CarRarity.Basic:   return PartRarity.Common;
+                case CarRarity.Medium:  return PartRarity.Uncommon;
+                case CarRarity.Premium: return PartRarity.Rare;
+                case CarRarity.Luxury:  return PartRarity.Epic;
+                case CarRarity.Secret:  return PartRarity.Epic;
+                default:                return PartRarity.Common;
+            }
         }
 
         public void CompleteRepair(int sessionIndex)

@@ -365,16 +365,40 @@ namespace AutoMechanic.Gameplay
             var session = sessions[sessionIndex];
 
             int fixedCount = session.fixedList != null ? session.fixedList.Count : 0;
+
+            // 0 починено → штраф
             if (fixedCount == 0)
                 return -sellAsIsNoRepairFee;
 
+            // Считаем стоимость починенных деталей + их редкости
             int partsCost = 0;
-            if (session.fixedList != null)
-                foreach (var bd in session.fixedList)
-                    if (bd != null) partsCost += bd.GetPartsCost();
+            PartRarity maxRarity = PartRarity.Common;
 
-            int price = Mathf.RoundToInt(partsCost * sellAsIsRate);
+            foreach (var bd in session.fixedList)
+            {
+                if (bd == null) continue;
+                partsCost += bd.GetPartsCost();
+                var r = bd.GetRarity();
+                if (r > maxRarity) maxRarity = r;
+            }
 
+            // Ставка машины (та же, что у заказа)
+            float machineRate = 0.25f;
+            int mIdx = (int)session.car.rarity;
+            if (machineProfitRates != null && mIdx >= 0 && mIdx < machineProfitRates.Length)
+                machineRate = machineProfitRates[mIdx];
+
+            // Бонус за редкость (та же, что у заказа)
+            float rarityBonus = 0f;
+            int rIdx = (int)maxRarity;
+            if (breakdownRarityBonus != null && rIdx >= 0 && rIdx < breakdownRarityBonus.Length)
+                rarityBonus = breakdownRarityBonus[rIdx];
+
+            // Формула как у заказа, но × sellAsIsRate (скидка за неполную сдачу)
+            float profitRate = (1f + machineRate + rarityBonus) * sellAsIsRate;
+            int price = Mathf.RoundToInt(partsCost * profitRate);
+
+            // + возврат диагностики (если что-то починено)
             if (DiagnosticManager.Instance != null && session.car != null)
                 price += DiagnosticManager.Instance.GetDiagnosisCost(session.car);
 

@@ -10,6 +10,7 @@ namespace AutoMechanic.Core
     /// <summary>
     /// Инициализация Yandex Games SDK при старте игры.
     /// Определяет язык пользователя (обязательное требование модерации).
+    /// Сообщает платформе GameReady.
     /// Вне WebGL — ничего не делает, чтобы не ломать редактор.
     /// </summary>
     public class YandexSDKInitializer : MonoBehaviour
@@ -30,7 +31,7 @@ namespace AutoMechanic.Core
             Instance = this;
             DontDestroyOnLoad(gameObject);
 
-            // Сразу подгружаем последний известный язык (на случай если SDK не отработает)
+            // Подгружаем последний известный язык (на случай, если SDK не отработает)
             UserLanguage = PlayerPrefs.GetString(LangSaveKey, "ru");
         }
 
@@ -48,7 +49,16 @@ namespace AutoMechanic.Core
         private void InitSDK()
         {
             Debug.Log("[YandexSDK] Инициализация...");
-            YandexGamesSdk.Initialize(OnSdkInitialized);
+
+            try
+            {
+                YandexGamesSdk.Initialize(OnSdkInitialized);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[YandexSDK] Ошибка инициализации: {e.Message}");
+                IsInitialized = false;
+            }
         }
 
         private void OnSdkInitialized()
@@ -56,85 +66,92 @@ namespace AutoMechanic.Core
             Debug.Log("[YandexSDK] Инициализирован успешно");
             IsInitialized = true;
 
-            // Определяем язык пользователя (требование модерации Яндекса)
+            // 1. Определяем язык пользователя (требование модерации)
             DetectLanguage();
 
-            // Сообщаем платформе, что игра готова
-            YandexGamesSdk.GameReady();
+            // 2. Сообщаем платформе, что игра готова
+            try
+            {
+                YandexGamesSdk.GameReady();
+                Debug.Log("[YandexSDK] GameReady отправлен");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"[YandexSDK] GameReady ошибка: {e.Message}");
+            }
         }
 
         /// <summary>
-        /// Пытается достать язык через SDK.
-        /// Работает через рефлексию — не падает, если API в этой версии другое.
+        /// Определяет язык через SDK.
+        /// Сначала пробует прямой API, потом — рефлексию (для совместимости).
         /// </summary>
         private void DetectLanguage()
         {
             string lang = null;
 
+            // ===== Вариант 1: прямой доступ к BananaParty API =====
             try
             {
-                // Вариант 1: YandexGamesSdk.Environment.I18n.Lang
-                var sdkType = typeof(YandexGamesSdk);
-                var envProp = sdkType.GetProperty("Environment", BindingFlags.Public | BindingFlags.Static);
-                if (envProp != null)
+                lang = YandexGamesSdk.Environment.i18n.lang;
+                if (!string.IsNullOrEmpty(lang))
+                    Debug.Log($"[YandexSDK] Язык через прямой API: {lang}");
+            }
+            catch (System.Exception e)
+            {
+                Debug.Log($"[YandexSDK] Прямой API недоступен: {e.Message}. Пробуем рефлексию.");
+            }
+
+            // ===== Вариант 2: рефлексия (на случай другой версии SDK) =====
+            if (string.IsNullOrEmpty(lang))
+            {
+                try
                 {
-                    var env = envProp.GetValue(null);
-                    if (env != null)
+                    var sdkType = typeof(YandexGamesSdk);
+
+                    var envProp = sdkType.GetProperty("Environment", BindingFlags.Public | BindingFlags.Static);
+                    if (envProp != null)
                     {
-                        var i18nProp = env.GetType().GetProperty("I18n");
-                        if (i18nProp != null)
+                        var env = envProp.GetValue(null);
+                        if (env != null)
                         {
-                            var i18n = i18nProp.GetValue(env);
-                            if (i18n != null)
+                            var i18nProp = env.GetType().GetProperty("I18n");
+                            if (i18nProp == null) i18nProp = env.GetType().GetProperty("i18n");
+                            if (i18nProp != null)
                             {
-                                var langProp = i18n.GetType().GetProperty("Lang");
-                                if (langProp != null) lang = langProp.GetValue(i18n) as string;
+                                var i18n = i18nProp.GetValue(env);
+                                if (i18n != null)
+                                {
+                                    var langProp = i18n.GetType().GetProperty("Lang");
+                                    if (langProp == null) langProp = i18n.GetType().GetProperty("lang");
+                                    if (langProp != null) lang = langProp.GetValue(i18n) as string;
+                                }
                             }
                         }
                     }
                 }
-
-                // Вариант 2: YandexGamesSdk.GetLanguage() — если есть метод
-                if (string.IsNullOrEmpty(lang))
+                catch (System.Exception e)
                 {
-                    var getLangMethod = sdkType.GetMethod("GetLanguage",
-                        BindingFlags.Public | BindingFlags.Static);
-                    if (getLangMethod != null)
-                        lang = getLangMethod.Invoke(null, null) as string;
-                }
-
-                // Вариант 3: YandexGamesSdk.Language — если есть свойство
-                if (string.IsNullOrEmpty(lang))
-                {
-                    var langProp2 = sdkType.GetProperty("Language",
-                        BindingFlags.Public | BindingFlags.Static);
-                    if (langProp2 != null)
-                        lang = langProp2.GetValue(null) as string;
+                    Debug.LogWarning($"[YandexSDK] Рефлексия не сработала: {e.Message}");
                 }
             }
-            catch (System.Exception e)
-            {
-                Debug.LogWarning($"[YandexSDK] Не удалось получить язык через SDK: {e.Message}");
-            }
 
+            // ===== Применяем результат =====
             if (!string.IsNullOrEmpty(lang))
             {
                 UserLanguage = lang;
                 PlayerPrefs.SetString(LangSaveKey, lang);
                 PlayerPrefs.Save();
-                Debug.Log($"[YandexSDK] Язык пользователя определён: {lang}");
+                Debug.Log($"[YandexSDK] Язык пользователя: {lang}");
             }
             else
             {
-                Debug.LogWarning("[YandexSDK] Язык не определён — fallback на 'ru'");
                 UserLanguage = "ru";
+                Debug.LogWarning("[YandexSDK] Язык не определён — fallback на 'ru'");
             }
         }
 #endif
 
-        /// <summary>
-        /// Публичный метод: получить текущий язык. Использовать в UI.
-        /// </summary>
+        /// <summary>Публичный метод: текущий язык для UI.</summary>
         public string GetLanguage()
         {
             return string.IsNullOrEmpty(UserLanguage) ? "ru" : UserLanguage;
