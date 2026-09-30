@@ -1,12 +1,5 @@
 {
   "dependencies": {
-    "com.bananaparty.yandexgames": {
-      "version": "https://github.com/forcepusher/com.bananaparty.yandexgames.git",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "1118bfb8fac153b4d82553df03b11d9ab83e9c2b"
-    },
     "com.gameframex.unity.demigiant.dotween": {
       "version": "https://github.com/AlianBlank/com.demigiant.dotween.git",
       "depth": 0,

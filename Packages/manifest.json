@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "com.bananaparty.yandexgames": "https://github.com/forcepusher/com.bananaparty.yandexgames.git",
     "com.gameframex.unity.demigiant.dotween": "https://github.com/AlianBlank/com.demigiant.dotween.git",
     "com.unity.collab-proxy": "2.13.6",
     "com.unity.feature.2d": "2.0.2",

@@ -1,16 +1,12 @@
 using System;
 using UnityEngine;
-
-#if UNITY_WEBGL && !UNITY_EDITOR
-using BananaParty.YandexGames;
-#endif
+using YG;
 
 namespace AutoMechanic.Core
 {
     /// <summary>
-    /// Реклама через Yandex Games SDK.
-    /// Rewarded Video — за просмотр даём $100.
-    /// Останавливает звук игры на время показа.
+    /// Реклама через Plugin Your Games 2.0.
+    /// Rewarded — за просмотр даём $100.
     /// </summary>
     public class AdManager : MonoBehaviour
     {
@@ -49,59 +45,29 @@ namespace AutoMechanic.Core
                 return;
             }
 
+            Debug.Log("[AdManager] ▶ Запрос Rewarded Video...");
+
 #if UNITY_WEBGL && !UNITY_EDITOR
-            if (YandexSDKInitializer.Instance == null || !YandexSDKInitializer.Instance.IsInitialized)
+            try
             {
-                Debug.LogWarning("[AdManager] SDK не готов — выдаём награду как fallback");
-                GiveReward();
-                return;
+                YG2.RewardedAdvShow("reward_money", OnRewardedSuccess);
             }
-            ShowAdWebGL();
+            catch (Exception e)
+            {
+                Debug.LogError($"[AdManager] Ошибка вызова рекламы: {e.Message}");
+                GiveReward();
+            }
 #else
             Debug.Log("[AdManager] Не WebGL — выдаём награду сразу");
             GiveReward();
 #endif
         }
 
-#if UNITY_WEBGL && !UNITY_EDITOR
-        private void ShowAdWebGL()
+        private void OnRewardedSuccess()
         {
-            Debug.Log("[AdManager] Запрос Rewarded Video...");
-
-            if (logCallbacks)
-                YandexGamesSdk.CallbackLogging = true;
-
-            VideoAd.Show(
-                onOpenCallback: () =>
-                {
-                    Debug.Log("[AdManager] Реклама открыта — пауза звука");
-                    PauseAllAudio();
-                },
-                onRewardedCallback: () =>
-                {
-                    Debug.Log("[AdManager] Досмотрено — награда");
-                    GiveReward();
-                },
-                onCloseCallback: () =>
-                {
-                    Debug.Log("[AdManager] Реклама закрыта");
-                    ResumeAllAudio();
-                    if (Time.time - _lastShowTime > 1f)
-                    {
-                        _lastShowTime = Time.time;
-                        OnRewardedFailed?.Invoke();
-                    }
-                },
-                onErrorCallback: (error) =>
-                {
-                    Debug.LogError($"[AdManager] Ошибка: {error}");
-                    ResumeAllAudio();
-                    _lastShowTime = Time.time;
-                    OnRewardedFailed?.Invoke();
-                }
-            );
+            Debug.Log("[AdManager] ✓ Rewarded просмотрен — выдаём награду");
+            GiveReward();
         }
-#endif
 
         private void GiveReward()
         {
@@ -116,13 +82,13 @@ namespace AutoMechanic.Core
 
         // ==================== ЗВУК ====================
 
-        private void PauseAllAudio()
+        public void PauseAllAudio()
         {
             AudioListener.pause = true;
             AudioListener.volume = 0f;
         }
 
-        private void ResumeAllAudio()
+        public void ResumeAllAudio()
         {
             AudioListener.pause = false;
             AudioListener.volume = 1f;
