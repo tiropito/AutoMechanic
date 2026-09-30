@@ -41,15 +41,14 @@ Thumbs.db
 desktop.ini
 
 # ===== Ассеты и билды =====
-# Раскомментируй, если хочешь публичный репозиторий ТОЛЬКО с кодом:
-# Assets/Sprites/
-# Assets/Audio/
-# Assets/Fonts/
-# Assets/Materials/
-# Assets/Prefabs/
-# Assets/Scenes/
-# Assets/ScriptableObjects/
-# Assets/WebGLTemplates/
+Assets/Sprites/
+Assets/Audio/
+Assets/Fonts/
+Assets/Materials/
+Assets/Prefabs/
+Assets/Scenes/
+Assets/ScriptableObjects/
+Assets/WebGLTemplates/
 
 # ===== Прочее =====
 *.apk
