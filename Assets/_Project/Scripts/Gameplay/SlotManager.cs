@@ -18,19 +18,11 @@ namespace AutoMechanic.Gameplay
     }
 
     /// <summary>
-    /// Слоты заказов. 
-    /// ИСПРАВЛЕНО: 
-    ///  - PickRandomCar теперь НЕ добавляет все машины, если CollectionManager ещё не готов;
-    ///  - Load() валидирует, что машина из сохранения всё ещё разблокирована;
-    ///  - Подписка на CollectionManager.OnCollectionChanged чистит слоты при сбросе прогресса;
-    ///  - При старте отложенная валидация после готовности всех менеджеров.
+    /// Слоты заказов. Все данные хранятся в SaveManager.Data (YG2.saves).
     /// </summary>
     public class SlotManager : MonoBehaviour
     {
         public static SlotManager Instance { get; private set; }
-
-        private const string KeySlotCount = "am_slot_count";
-        private const string KeySlotPrefix = "am_slot_";
 
         [Header("Ссылки")]
         [SerializeField] private CarDatabase carDatabase;
@@ -43,11 +35,7 @@ namespace AutoMechanic.Gameplay
         [SerializeField] private float bonusTimeSeconds = 30f;
 
         [Header("Антиповтор")]
-        [Tooltip("Исключать из выбора машины, которые уже стоят в других слотах")]
         [SerializeField] private bool avoidDuplicates = true;
-
-        [Tooltip("Сколько попыток перекрутить рандом, если попались дубли")]
-        [SerializeField] private int maxRerollAttempts = 20;
 
         [Header("Слоты (не трогай руками)")]
         [SerializeField] private List<SlotData> slots = new List<SlotData>();
@@ -58,7 +46,6 @@ namespace AutoMechanic.Gameplay
 
         public event Action OnSlotsChanged;
 
-        private int _lastSaveFrame = -1;
         private bool _collectionSubscribed;
         private bool _started;
 
@@ -69,12 +56,21 @@ namespace AutoMechanic.Gameplay
             DontDestroyOnLoad(gameObject);
 
             if (carDatabase == null)
-            {
                 Debug.LogError("[SlotManager] CarDatabase не назначен!");
-                return;
-            }
 
-            Load();
+            SaveManager.OnDataReloaded += HandleDataReloaded;
+            LoadFromSave();
+        }
+
+        private void OnDestroy()
+        {
+            SaveManager.OnDataReloaded -= HandleDataReloaded;
+        }
+
+        private void HandleDataReloaded()
+        {
+            Debug.Log("[SlotManager] Данные перезагружены — обновляю слоты");
+            LoadFromSave();
         }
 
         private void Start()
@@ -95,9 +91,6 @@ namespace AutoMechanic.Gameplay
             UnsubscribeCollection();
         }
 
-        private void OnApplicationQuit() { Save(); }
-        private void OnApplicationPause(bool pause) { if (pause) Save(); }
-
         // ==================== ПОДПИСКА НА КОЛЛЕКЦИЮ ====================
 
         private void TrySubscribeCollection()
@@ -107,7 +100,6 @@ namespace AutoMechanic.Gameplay
 
             CollectionManager.Instance.OnCollectionChanged += OnCollectionChanged;
             _collectionSubscribed = true;
-            Debug.Log("[SlotManager] Подписался на OnCollectionChanged");
         }
 
         private void UnsubscribeCollection()
@@ -120,17 +112,12 @@ namespace AutoMechanic.Gameplay
 
         private void OnCollectionChanged()
         {
-            // Когда игрок отремонтировал машину — открылись новые.
-            // Когда сбросил коллекцию — старые надо убрать из слотов.
             ValidateSlotsAgainstCollection();
             FillEmptySlotsSafely();
         }
 
-        // ==================== ВАЛИДАЦИЯ СЛОТОВ ====================
+        // ==================== ВАЛИДАЦИЯ ====================
 
-        /// <summary>
-        /// Убирает из слотов машины, которые больше не разблокированы.
-        /// </summary>
         private void ValidateSlotsAgainstCollection()
         {
             if (CollectionManager.Instance == null) return;
@@ -140,10 +127,9 @@ namespace AutoMechanic.Gameplay
             {
                 var s = slots[i];
                 if (s == null || s.currentCar == null) continue;
-
                 if (CollectionManager.Instance.IsUnlocked(s.currentCar)) continue;
 
-                Debug.Log($"[SlotManager] Слот {i}: {s.currentCar.id} больше не разблокирован — освобождаю");
+                Debug.Log($"[SlotManager] Слот {i}: {s.currentCar.id} не разблокирован — освобождаю");
                 s.currentCar = null;
                 s.isBonus = false;
                 s.bonusTimeLeft = 0f;
@@ -155,13 +141,10 @@ namespace AutoMechanic.Gameplay
             if (changed)
             {
                 OnSlotsChanged?.Invoke();
-                Save();
+                SaveToSave();
             }
         }
 
-        /// <summary>
-        /// Заполняет пустые слоты, только если CollectionManager готов.
-        /// </summary>
         private void FillEmptySlotsSafely()
         {
             if (CollectionManager.Instance == null)
@@ -182,7 +165,7 @@ namespace AutoMechanic.Gameplay
                 changed = true;
             }
 
-            if (changed) Save();
+            if (changed) SaveToSave();
         }
 
         // ==================== ОСНОВНОЙ ЦИКЛ ====================
@@ -205,7 +188,7 @@ namespace AutoMechanic.Gameplay
                     s.bonusTimeLeft -= Time.deltaTime;
                     if (s.bonusTimeLeft <= 0f)
                     {
-                        Debug.Log($"[SlotManager] Бонусная {s.currentCar.displayName} уехала — время вышло");
+                        Debug.Log($"[SlotManager] Бонусная {s.currentCar.displayName} уехала");
                         MakeEmpty(i);
                     }
                 }
@@ -225,14 +208,9 @@ namespace AutoMechanic.Gameplay
                 AudioManager.Instance.PlayBonus();
 
             OnSlotsChanged?.Invoke();
-            Save();
+            SaveToSave();
         }
 
-        /// <summary>
-        /// ИСПРАВЛЕНО: 
-        ///  - если CollectionManager ещё не готов — используем ТОЛЬКО Basic-машины;
-        ///  - иначе — только разблокированные.
-        /// </summary>
         private CarData PickRandomCar(int forSlotIndex)
         {
             if (carDatabase == null || carDatabase.allCars == null || carDatabase.allCars.Length == 0)
@@ -242,7 +220,6 @@ namespace AutoMechanic.Gameplay
 
             if (CollectionManager.Instance == null)
             {
-                // Fallback: безопасно — только Basic. Никаких Secret/Epic пока не готов менеджер.
                 Debug.LogWarning("[SlotManager] CollectionManager не готов — только Basic-машины");
                 foreach (var car in carDatabase.allCars)
                 {
@@ -263,14 +240,13 @@ namespace AutoMechanic.Gameplay
 
             if (pool.Count == 0)
             {
-                Debug.LogWarning("[SlotManager] Пул машин пуст (нет разблокированных)");
+                Debug.LogWarning("[SlotManager] Пул машин пуст");
                 return null;
             }
 
             if (!avoidDuplicates)
                 return pool[UnityEngine.Random.Range(0, pool.Count)];
 
-            // Антиповтор по другим слотам
             var usedIds = new HashSet<string>();
             for (int i = 0; i < slots.Count; i++)
             {
@@ -282,10 +258,7 @@ namespace AutoMechanic.Gameplay
             }
 
             if (usedIds.Count >= pool.Count)
-            {
-                Debug.Log("[SlotManager] Все машины пула уже в слотах — берём любую");
                 return pool[UnityEngine.Random.Range(0, pool.Count)];
-            }
 
             var uniquePool = new List<CarData>();
             foreach (var car in pool)
@@ -310,7 +283,7 @@ namespace AutoMechanic.Gameplay
             s.bonusTimeLeft = 0f;
             s.refillDelay = UnityEngine.Random.Range(refillDelayMin, refillDelayMax);
             OnSlotsChanged?.Invoke();
-            Save();
+            SaveToSave();
         }
 
         public CarData TakeCar(int slotIndex)
@@ -337,85 +310,82 @@ namespace AutoMechanic.Gameplay
                 refillDelay = UnityEngine.Random.Range(refillDelayMin, refillDelayMax)
             });
             OnSlotsChanged?.Invoke();
-            Save();
+            SaveToSave();
             return true;
         }
 
         // ==================== СОХРАНЕНИЕ ====================
 
-        public void Save()
+        private void SaveToSave()
         {
-            if (_lastSaveFrame == Time.frameCount) return;
-            _lastSaveFrame = Time.frameCount;
+            var data = SaveManager.Data;
+            data.slotCount = slots.Count;
 
-            PlayerPrefs.SetInt(KeySlotCount, slots.Count);
+            data.slotCars.Clear();
+            data.slotBonus.Clear();
+            data.slotBonusTime.Clear();
+            data.slotEmptyTime.Clear();
+            data.slotRefill.Clear();
 
             for (int i = 0; i < slots.Count; i++)
             {
                 var s = slots[i];
-                string p = KeySlotPrefix + i + "_";
-
-                PlayerPrefs.SetString(p + "car", s.currentCar != null ? s.currentCar.id : "");
-                PlayerPrefs.SetInt(p + "bonus", s.isBonus ? 1 : 0);
-                PlayerPrefs.SetFloat(p + "bonus_time", s.bonusTimeLeft);
-                PlayerPrefs.SetFloat(p + "empty_time", s.timeSinceEmpty);
-                PlayerPrefs.SetFloat(p + "refill", s.refillDelay);
+                data.slotCars.Add(s.currentCar != null ? s.currentCar.id : "");
+                data.slotBonus.Add(s.isBonus);
+                data.slotBonusTime.Add(s.bonusTimeLeft);
+                data.slotEmptyTime.Add(s.timeSinceEmpty);
+                data.slotRefill.Add(s.refillDelay);
             }
 
-            PlayerPrefs.Save();
+            SaveManager.Save();
         }
 
-        public void Load()
+        private void LoadFromSave()
         {
             slots.Clear();
+            var data = SaveManager.Data;
 
-            int count = PlayerPrefs.GetInt(KeySlotCount, 0);
-
-            if (count <= 0)
-            {
-                // Первый запуск — создаём пустые слоты, но НЕ заполняем.
-                // Заполнение произойдёт в Start() после того, как CollectionManager будет готов.
-                while (slots.Count < startSlots)
-                    slots.Add(new SlotData { refillDelay = UnityEngine.Random.Range(refillDelayMin, refillDelayMax) });
-
-                Debug.Log($"[SlotManager] Первый запуск — создано слотов: {slots.Count} (заполнение отложено)");
-                return;
-            }
+            int count = data.slotCount;
+            if (count <= 0) count = startSlots;
 
             for (int i = 0; i < count; i++)
             {
-                string p = KeySlotPrefix + i + "_";
-                var data = new SlotData
-                {
-                    isBonus = PlayerPrefs.GetInt(p + "bonus", 0) == 1,
-                    bonusTimeLeft = PlayerPrefs.GetFloat(p + "bonus_time", 0f),
-                    timeSinceEmpty = PlayerPrefs.GetFloat(p + "empty_time", 0f),
-                    refillDelay = PlayerPrefs.GetFloat(p + "refill", UnityEngine.Random.Range(refillDelayMin, refillDelayMax))
-                };
+                var slot = new SlotData();
 
-                string carId = PlayerPrefs.GetString(p + "car", "");
-                if (!string.IsNullOrEmpty(carId))
-                    data.currentCar = FindCarById(carId);
-
-                // Валидация: машина должна быть разблокирована. Если CollectionManager ещё не готов — пропускаем,
-                // повторная валидация пройдёт в Start().
-                if (data.currentCar != null && CollectionManager.Instance != null
-                    && !CollectionManager.Instance.IsUnlocked(data.currentCar))
+                if (i < data.slotCars.Count)
                 {
-                    Debug.Log($"[SlotManager] Слот {i}: {carId} не разблокирован — освобождаю");
-                    data.currentCar = null;
-                    data.isBonus = false;
-                    data.bonusTimeLeft = 0f;
+                    string carId = data.slotCars[i];
+                    if (!string.IsNullOrEmpty(carId))
+                        slot.currentCar = FindCarById(carId);
+
+                    if (i < data.slotBonus.Count) slot.isBonus = data.slotBonus[i];
+                    if (i < data.slotBonusTime.Count) slot.bonusTimeLeft = data.slotBonusTime[i];
+                    if (i < data.slotEmptyTime.Count) slot.timeSinceEmpty = data.slotEmptyTime[i];
+                    if (i < data.slotRefill.Count) slot.refillDelay = data.slotRefill[i];
                 }
 
-                if (data.currentCar != null && data.isBonus && data.bonusTimeLeft < 5f)
+                if (slot.refillDelay <= 0f)
+                    slot.refillDelay = UnityEngine.Random.Range(refillDelayMin, refillDelayMax);
+
+                // Валидация: машина должна быть разблокирована
+                if (slot.currentCar != null && CollectionManager.Instance != null
+                    && !CollectionManager.Instance.IsUnlocked(slot.currentCar))
                 {
-                    data.currentCar = null;
-                    data.isBonus = false;
-                    data.bonusTimeLeft = 0f;
+                    Debug.Log($"[SlotManager] Слот {i}: {slot.currentCar.id} не разблокирован");
+                    slot.currentCar = null;
+                    slot.isBonus = false;
+                    slot.bonusTimeLeft = 0f;
                 }
 
-                slots.Add(data);
+                // Бонусная машина почти кончилась — освобождаем
+                if (slot.currentCar != null && slot.isBonus && slot.bonusTimeLeft < 5f)
+                {
+                    slot.currentCar = null;
+                    slot.isBonus = false;
+                    slot.bonusTimeLeft = 0f;
+                }
+
+                slots.Add(slot);
             }
 
             Debug.Log($"[SlotManager] Загружено слотов: {slots.Count}");
@@ -432,22 +402,23 @@ namespace AutoMechanic.Gameplay
 
         // ==================== ТЕСТЫ ====================
 
-        [ContextMenu("ТЕСТ: сбросить сохранение слотов")]
-        public void ResetSave()
+        [ContextMenu("ТЕСТ: сбросить слоты")]
+        public void ResetSlots()
         {
-            int count = PlayerPrefs.GetInt(KeySlotCount, 0);
-            for (int i = 0; i < count; i++)
-            {
-                string p = KeySlotPrefix + i + "_";
-                PlayerPrefs.DeleteKey(p + "car");
-                PlayerPrefs.DeleteKey(p + "bonus");
-                PlayerPrefs.DeleteKey(p + "bonus_time");
-                PlayerPrefs.DeleteKey(p + "empty_time");
-                PlayerPrefs.DeleteKey(p + "refill");
-            }
-            PlayerPrefs.DeleteKey(KeySlotCount);
-            PlayerPrefs.Save();
-            Debug.Log("[SlotManager] Сохранение слотов сброшено. Перезапусти Play");
+            var data = SaveManager.Data;
+            data.slotCount = startSlots;
+            data.slotCars.Clear();
+            data.slotBonus.Clear();
+            data.slotBonusTime.Clear();
+            data.slotEmptyTime.Clear();
+            data.slotRefill.Clear();
+            SaveManager.Save();
+
+            slots.Clear();
+            for (int i = 0; i < startSlots; i++)
+                slots.Add(new SlotData { refillDelay = UnityEngine.Random.Range(refillDelayMin, refillDelayMax) });
+
+            Debug.Log("[SlotManager] Слоты сброшены. Перезапусти Play");
         }
 
         [ContextMenu("ТЕСТ: показать слоты")]
@@ -464,7 +435,7 @@ namespace AutoMechanic.Gameplay
             Debug.Log(sb.ToString());
         }
 
-        [ContextMenu("ТЕСТ: пересобрать все слоты")]
+        [ContextMenu("ТЕСТ: пересобрать слоты")]
         private void TestRebuild()
         {
             for (int i = 0; i < slots.Count; i++)
@@ -483,7 +454,7 @@ namespace AutoMechanic.Gameplay
         [ContextMenu("ТЕСТ: +1 слот")]
         private void TestAddSlot()
         {
-            if (TryAddSlot()) Debug.Log($"[SlotManager] Слотов теперь: {slots.Count}");
+            if (TryAddSlot()) Debug.Log($"[SlotManager] Слотов: {slots.Count}");
             else Debug.Log("[SlotManager] Максимум достигнут");
         }
 
@@ -494,14 +465,14 @@ namespace AutoMechanic.Gameplay
             slots[0].isBonus = true;
             slots[0].bonusTimeLeft = 30f;
             OnSlotsChanged?.Invoke();
-            Debug.Log("[SlotManager] Слот 0 стал бонусным на 30 сек");
+            SaveToSave();
         }
 
-        [ContextMenu("ТЕСТ: показать, какие машины разблокированы")]
+        [ContextMenu("ТЕСТ: какие машины разблокированы")]
         private void TestShowUnlocked()
         {
-            if (carDatabase == null || carDatabase.allCars == null) { Debug.Log("[SlotManager] Нет базы"); return; }
-            var sb = new System.Text.StringBuilder("[SlotManager] Разблокированные машины:\n");
+            if (carDatabase == null || carDatabase.allCars == null) return;
+            var sb = new System.Text.StringBuilder("[SlotManager] Разблокированные:\n");
             int total = 0;
             foreach (var car in carDatabase.allCars)
             {
@@ -510,7 +481,7 @@ namespace AutoMechanic.Gameplay
                 sb.AppendLine($"  {(unlocked ? "✅" : "🔒")} {car.displayName} [{car.rarity}]");
                 if (unlocked) total++;
             }
-            sb.AppendLine($"Итого разблокировано: {total}");
+            sb.AppendLine($"Итого: {total}");
             Debug.Log(sb.ToString());
         }
     }

@@ -1,28 +1,21 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
+using AutoMechanic.Core;
 using AutoMechanic.Data;
 
 namespace AutoMechanic.Gameplay
 {
     /// <summary>
-    /// Коллекция: отслеживает уникальные отремонтированные машины.
-    /// Хранит прогресс в PlayerPrefs.
+    /// Коллекция отремонтированных машин. Данные в SaveManager.
     /// </summary>
     public class CollectionManager : MonoBehaviour
     {
         public static CollectionManager Instance { get; private set; }
 
-        private const string KeyPrefix = "am_repaired_";
-        private const string KeyCount = "am_repaired_count";
-
-        [Header("Ссылки")]
         [Tooltip("Реестр машин. Перетащи CarDatabase.asset")]
         [SerializeField] private CarDatabase carDatabase;
 
-        private readonly HashSet<string> _repairedIds = new HashSet<string>();
-
-        public int RepairedCount => _repairedIds.Count;
+        public int RepairedCount => SaveManager.Data.repairedIds.Count;
 
         public event Action OnCollectionChanged;
 
@@ -31,12 +24,24 @@ namespace AutoMechanic.Gameplay
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            Load();
+
+            SaveManager.OnDataReloaded += HandleDataReloaded;
+            _ = SaveManager.Data;
+        }
+
+        private void OnDestroy()
+        {
+            SaveManager.OnDataReloaded -= HandleDataReloaded;
+        }
+
+        private void HandleDataReloaded()
+        {
+            OnCollectionChanged?.Invoke();
         }
 
         public bool IsRepaired(string carId)
         {
-            return !string.IsNullOrEmpty(carId) && _repairedIds.Contains(carId);
+            return !string.IsNullOrEmpty(carId) && SaveManager.Data.repairedIds.Contains(carId);
         }
 
         public bool IsRepaired(CarData car) => car != null && IsRepaired(car.id);
@@ -44,14 +49,12 @@ namespace AutoMechanic.Gameplay
         public void MarkRepaired(CarData car)
         {
             if (car == null || string.IsNullOrEmpty(car.id)) return;
-            if (_repairedIds.Contains(car.id)) return;
+            if (SaveManager.Data.repairedIds.Contains(car.id)) return;
 
-            _repairedIds.Add(car.id);
-            Save();
+            SaveManager.Data.repairedIds.Add(car.id);
+            SaveManager.Save();
 
-            Debug.Log($"[CollectionManager] Новая машина отремонтирована: {car.displayName}. Всего: {RepairedCount}");
-
-            CheckUnlocks();
+            Debug.Log($"[CollectionManager] Новая машина: {car.displayName}. Всего: {RepairedCount}");
             OnCollectionChanged?.Invoke();
         }
 
@@ -68,68 +71,13 @@ namespace AutoMechanic.Gameplay
             return Mathf.Max(0, required - RepairedCount);
         }
 
-        public List<CarData> GetUnlockedCars()
-        {
-            var result = new List<CarData>();
-            if (carDatabase == null || carDatabase.allCars == null) return result;
-
-            foreach (var car in carDatabase.allCars)
-            {
-                if (car == null) continue;
-                if (IsUnlocked(car)) result.Add(car);
-            }
-            return result;
-        }
-
         [ContextMenu("Сбросить коллекцию")]
         public void ResetCollection()
         {
-            foreach (var id in _repairedIds)
-                PlayerPrefs.DeleteKey(KeyPrefix + id);
-
-            _repairedIds.Clear();
-            PlayerPrefs.SetInt(KeyCount, 0);
-            PlayerPrefs.Save();
-
+            SaveManager.Data.repairedIds.Clear();
+            SaveManager.Save();
             Debug.Log("[CollectionManager] Коллекция сброшена");
             OnCollectionChanged?.Invoke();
-        }
-
-        private void CheckUnlocks()
-        {
-            if (carDatabase == null || carDatabase.allCars == null) return;
-
-            foreach (var car in carDatabase.allCars)
-            {
-                if (car == null) continue;
-                int required = CarData.GetRequiredProgress(car.rarity);
-                if (RepairedCount == required && required > 0)
-                    Debug.Log($"[CollectionManager] 🔓 Открыта новая машина: {car.displayName} ({car.rarity})");
-            }
-        }
-
-        private void Save()
-        {
-            foreach (var id in _repairedIds)
-                PlayerPrefs.SetInt(KeyPrefix + id, 1);
-
-            PlayerPrefs.SetInt(KeyCount, _repairedIds.Count);
-            PlayerPrefs.Save();
-        }
-
-        private void Load()
-        {
-            _repairedIds.Clear();
-            if (carDatabase == null || carDatabase.allCars == null) return;
-
-            foreach (var car in carDatabase.allCars)
-            {
-                if (car == null) continue;
-                if (PlayerPrefs.GetInt(KeyPrefix + car.id, 0) == 1)
-                    _repairedIds.Add(car.id);
-            }
-
-            Debug.Log($"[CollectionManager] Загружено отремонтированных: {_repairedIds.Count}");
         }
 
         [ContextMenu("ТЕСТ: показать коллекцию")]
@@ -145,7 +93,7 @@ namespace AutoMechanic.Gameplay
                     bool done = IsRepaired(car);
                     bool unlocked = IsUnlocked(car);
                     string mark = done ? "✅" : (unlocked ? "🔓" : "🔒");
-                    sb.AppendLine($"  {mark} {car.displayName} [{car.rarity}] (нужно {CarData.GetRequiredProgress(car.rarity)})");
+                    sb.AppendLine($"  {mark} {car.displayName} [{car.rarity}]");
                 }
             }
             Debug.Log(sb.ToString());

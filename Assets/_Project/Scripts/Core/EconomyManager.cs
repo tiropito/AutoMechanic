@@ -4,84 +4,73 @@ using UnityEngine;
 namespace AutoMechanic.Core
 {
     /// <summary>
-    /// Управляет деньгами игрока. Singleton — один на всю сцену.
-    /// Сохраняет баланс в PlayerPrefs (работает в WebGL).
+    /// Управляет деньгами игрока. Синхронизируется с SaveManager.
     /// </summary>
     public class EconomyManager : MonoBehaviour
     {
         public static EconomyManager Instance { get; private set; }
 
-        private const string SaveKeyMoney = "am_money";
-        private const int StartMoney = 200; // из ТЗ, раздел 11
+        private const int StartMoney = 200;
 
-        [SerializeField] private int currentMoney = StartMoney;
+        public int Money => SaveManager.Data.money;
 
-        /// <summary>Текущий баланс</summary>
-        public int Money => currentMoney;
-
-        /// <summary>Вызывается при каждом изменении баланса. Аргумент — новый баланс.</summary>
         public event Action<int> OnMoneyChanged;
 
         private void Awake()
         {
-            // Singleton: если уже есть — уничтожаем дубликат
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
+            if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
             DontDestroyOnLoad(gameObject);
 
-            Load();
+            // Подписка на перезагрузку данных из SDK
+            SaveManager.OnDataReloaded += HandleDataReloaded;
+
+            // Форсируем первичную загрузку
+            _ = SaveManager.Data;
         }
 
-        /// <summary>Начислить деньги (ремонт, заказ, продажа детали)</summary>
+        private void OnDestroy()
+        {
+            SaveManager.OnDataReloaded -= HandleDataReloaded;
+        }
+
+        private void HandleDataReloaded()
+        {
+            OnMoneyChanged?.Invoke(Money);
+        }
+
         public void Add(int amount)
         {
             if (amount <= 0) return;
-            currentMoney += amount;
-            Save();
-            OnMoneyChanged?.Invoke(currentMoney);
+            SaveManager.Data.money += amount;
+            SaveManager.Save();
+            OnMoneyChanged?.Invoke(Money);
         }
 
-        /// <summary>Попытаться списать деньги. Возвращает false, если не хватает.</summary>
         public bool Spend(int amount)
         {
             if (amount <= 0) return true;
-            if (currentMoney < amount) return false;
+            if (SaveManager.Data.money < amount) return false;
 
-            currentMoney -= amount;
-            Save();
-            OnMoneyChanged?.Invoke(currentMoney);
+            SaveManager.Data.money -= amount;
+            SaveManager.Save();
+            OnMoneyChanged?.Invoke(Money);
             return true;
         }
 
-        /// <summary>Хватает ли денег на покупку</summary>
-        public bool CanAfford(int amount) => currentMoney >= amount;
+        public bool CanAfford(int amount) => SaveManager.Data.money >= amount;
 
-        /// <summary>Сбросить прогресс (для отладки)</summary>
         [ContextMenu("Сбросить деньги до стартовых")]
         public void ResetToStart()
         {
-            currentMoney = StartMoney;
-            Save();
-            OnMoneyChanged?.Invoke(currentMoney);
+            SaveManager.Data.money = StartMoney;
+            SaveManager.Save();
+            OnMoneyChanged?.Invoke(Money);
             Debug.Log($"[EconomyManager] Деньги сброшены до ${StartMoney}");
         }
 
-        private void Save()
-        {
-            PlayerPrefs.SetInt(SaveKeyMoney, currentMoney);
-            PlayerPrefs.Save();
-        }
+        // ===== ТЕСТЫ =====
 
-        private void Load()
-        {
-            currentMoney = PlayerPrefs.GetInt(SaveKeyMoney, StartMoney);
-        }
-
-        // ===== ТЕСТ: кликни правой кнопкой на компоненте в Play Mode =====
         [ContextMenu("ТЕСТ: +50")]
         private void TestAdd50() => Add(50);
 

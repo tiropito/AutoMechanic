@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using YG;
 
@@ -6,7 +7,7 @@ namespace AutoMechanic.Core
 {
     /// <summary>
     /// Инициализация SDK Яндекс Игр через Plugin Your Games 2.0.
-    /// Плагин делает всё сам — этот скрипт только ждёт готовности и логирует.
+    /// Дожидается готовности YG2, потом перезагружает сохранения.
     /// </summary>
     public class YandexSDKInitializer : MonoBehaviour
     {
@@ -15,24 +16,55 @@ namespace AutoMechanic.Core
         public bool IsInitialized { get; private set; }
         public string UserLanguage { get; private set; } = "ru";
 
-        private const string LangSaveKey = "am_user_lang";
-
         private void Awake()
         {
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            UserLanguage = PlayerPrefs.GetString(LangSaveKey, "ru");
+
+            // Первичная загрузка (может быть дефолт, если SDK не готов)
+            _ = SaveManager.Data;
+            UserLanguage = SaveManager.Data.lang;
         }
 
         private void Start()
         {
-            Invoke(nameof(CheckLanguage), 1f);
-            IsInitialized = true;
-            Debug.Log("[YandexSDK] ✓ Готов (инициализацией занимается PluginYG2)");
+            StartCoroutine(InitRoutine());
         }
 
-        private void CheckLanguage()
+        private IEnumerator InitRoutine()
+        {
+            Debug.Log("[YandexSDK] ▶ Ожидание готовности SDK...");
+
+            float elapsed = 0f;
+            const float timeout = 15f;
+
+            // Ждём, пока плагин сообщит о готовности
+            while (!YG2.isSDKEnabled && elapsed < timeout)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                yield return null;
+            }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+            if (YG2.isSDKEnabled)
+            {
+                Debug.Log("[YandexSDK] ✓ SDK готов. Перезагружаем сохранения.");
+                SaveManager.Reload();
+                TryDetectLanguage();
+            }
+            else
+            {
+                Debug.LogWarning($"[YandexSDK] SDK не готов за {timeout}с — работаем на дефолтах");
+            }
+#else
+            Debug.Log("[YandexSDK] Не WebGL — SDK не инициализируем");
+#endif
+
+            IsInitialized = true;
+        }
+
+        private void TryDetectLanguage()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
             try
@@ -41,25 +73,19 @@ namespace AutoMechanic.Core
                 if (!string.IsNullOrEmpty(lang))
                 {
                     UserLanguage = lang;
-                    PlayerPrefs.SetString(LangSaveKey, lang);
-                    PlayerPrefs.Save();
-                    Debug.Log($"[YandexSDK] Язык пользователя: {lang}");
+                    SaveManager.Data.lang = lang;
+                    SaveManager.Save();
+                    Debug.Log($"[YandexSDK] Язык: {lang}");
                 }
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"[YandexSDK] Не удалось получить язык: {e.Message}");
+                Debug.LogWarning($"[YandexSDK] Язык не определён: {e.Message}");
             }
-#else
-            Debug.Log("[YandexSDK] Не WebGL — язык не запрашиваем");
 #endif
         }
 
-        public string GetLanguage()
-        {
-            return string.IsNullOrEmpty(UserLanguage) ? "ru" : UserLanguage;
-        }
-
+        public string GetLanguage() => string.IsNullOrEmpty(UserLanguage) ? "ru" : UserLanguage;
         public bool CanUseSdk => IsInitialized;
     }
 }
